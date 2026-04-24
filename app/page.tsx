@@ -5,20 +5,26 @@ export default function Home() {
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // State mới cho AI Coach
   const [aiMessage, setAiMessage] = useState("Đang thỉnh giáo AI Coach...");
-  const myStravaId = 33415712; // Mã Strava của bạn
+  const myStravaId = 33415712; 
 
   const fetchData = () => {
     setLoading(true);
     setAiMessage("Đang thỉnh giáo AI Coach...");
 
-    // 1. Lấy Bảng xếp hạng
+    // 1. Lấy Bảng xếp hạng (Đã thêm cơ chế bắt lỗi)
     fetch('https://myrace-backend.onrender.com/api/leaderboard/1')
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error("Máy chủ lỗi hoặc đang ngủ!");
+        return res.json();
+      })
       .then((data) => {
         setLeaderboard(data.leaderboard || []);
-        setLoading(false);
+        setLoading(false); // Tắt loading khi thành công
+      })
+      .catch((err) => {
+        console.error(err);
+        setLoading(false); // Bắt buộc tắt loading kể cả khi có lỗi
       });
       
     // 2. Lấy lời khuyên từ AI Coach
@@ -63,13 +69,13 @@ export default function Home() {
               onClick={fetchData}
               className="px-4 py-2 bg-orange-100 text-orange-600 font-semibold rounded-lg hover:bg-orange-200 transition-colors"
             >
-              {loading ? 'Đang tải...' : '🔄 Cập nhật dữ liệu & AI'}
+              {loading ? 'Đang tải (Chờ Server dậy)...' : '🔄 Cập nhật dữ liệu & AI'}
             </button>
           </div>
 
           <div className="divide-y divide-gray-200">
             {leaderboard.length === 0 && !loading ? (
-              <p className="text-center text-gray-500 py-8">Chưa có ai tham gia giải đấu này.</p>
+              <p className="text-center text-gray-500 py-8">Máy chủ Render đang ngủ hoặc Chưa nạp dữ liệu DB!</p>
             ) : (
               leaderboard.map((athlete) => (
                 <div key={athlete.strava_id} className="flex items-center p-6 hover:bg-gray-50 transition duration-150">
@@ -83,8 +89,9 @@ export default function Home() {
                     <p className="text-sm text-gray-500">Mã Strava</p>
                   </div>
                   <div className="ml-4 text-right">
+                    {/* Đã sửa thành "score" và "unit" cho chuẩn hệ quy đổi mới */}
                     <p className="text-3xl font-black text-orange-500">
-                      {athlete.distance} <span className="text-lg font-medium text-gray-500">km</span>
+                      {athlete.score} <span className="text-lg font-medium text-gray-500">{athlete.unit}</span>
                     </p>
                   </div>
                 </div>
