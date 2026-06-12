@@ -1,102 +1,48 @@
-'use client';
-import { useEffect, useState } from 'react';
+import React from 'react';
 
-export default function Home() {
-  const [leaderboard, setLeaderboard] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function LandingPage() {
+  // Lấy biến môi trường từ Vercel
+  const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
   
-  const [aiMessage, setAiMessage] = useState("Đang thỉnh giáo AI Coach...");
-  const myStravaId = 33415712; 
-
-  const fetchData = () => {
-    setLoading(true);
-    setAiMessage("Đang thỉnh giáo AI Coach...");
-
-    // 1. Lấy Bảng xếp hạng (Đã thêm cơ chế bắt lỗi)
-    fetch('https://myrace-backend.onrender.com/api/leaderboard/1')
-      .then((res) => {
-        if (!res.ok) throw new Error("Máy chủ lỗi hoặc đang ngủ!");
-        return res.json();
-      })
-      .then((data) => {
-        setLeaderboard(data.leaderboard || []);
-        setLoading(false); // Tắt loading khi thành công
-      })
-      .catch((err) => {
-        console.error(err);
-        setLoading(false); // Bắt buộc tắt loading kể cả khi có lỗi
-      });
-      
-    // 2. Lấy lời khuyên từ AI Coach
-    fetch(`https://myrace-backend.onrender.com/api/ai-coach/${myStravaId}`)
-      .then((res) => res.json())
-      .then((data) => {
-        setAiMessage(data.message);
-      })
-      .catch(() => setAiMessage("Tiếp tục chạy đi nào!"));
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
+  // Mẹo nhỏ cực hay: Cắt bỏ dấu "/" ở cuối link (nếu sếp lỡ tay copy dư) để tránh lỗi URL
+  const API_URL = rawApiUrl.replace(/\/$/, ""); 
+  
+  const stravaLoginUrl = `${API_URL}/auth/login`;
 
   return (
-    <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8 font-sans">
-      <div className="max-w-3xl mx-auto">
-        
-        {/* Header Giải Đấu */}
-        <div className="bg-orange-500 rounded-t-2xl p-8 text-center text-white shadow-lg">
-          <h1 className="text-4xl font-extrabold uppercase tracking-wider mb-2">Myrace Challenge</h1>
-          <p className="text-lg opacity-90">Bảng Xếp Hạng Trực Tuyến</p>
+    <div className="min-h-screen bg-gradient-to-br from-orange-500 to-red-600 flex flex-col items-center justify-center p-4 text-white">
+      <div className="max-w-3xl w-full text-center">
+        {/* Logo / Header */}
+        <div className="mb-8 animate-fade-in-down">
+          <h1 className="text-5xl md:text-7xl font-extrabold tracking-tighter mb-4 drop-shadow-lg">
+            MY<span className="text-yellow-300">RACE</span>
+          </h1>
+          <p className="text-lg md:text-2xl font-medium opacity-90 drop-shadow-md">
+            Nền Tảng Tổ Chức Giải Thể Thao Chuyên Nghiệp
+          </p>
         </div>
 
-        {/* Hộp thoại AI Coach */}
-        <div className="bg-blue-50 border-l-4 border-blue-500 p-5 my-4 rounded-r-lg shadow-md transform transition-all hover:scale-105">
-          <div className="flex items-center">
-            <span className="text-4xl mr-4">🤖</span>
-            <div>
-              <h3 className="text-blue-800 font-black text-sm uppercase tracking-widest">AI Coach nhắn nhủ:</h3>
-              <p className="text-blue-900 font-medium text-lg italic mt-1">"{aiMessage}"</p>
-            </div>
-          </div>
-        </div>
+        {/* Khối Đăng nhập */}
+        <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-12 text-gray-800 max-w-md mx-auto transform transition hover:scale-105 duration-300">
+          <h2 className="text-2xl font-bold mb-2 text-center">Bắt đầu ngay</h2>
+          <p className="text-gray-500 text-center mb-8 text-sm">
+            Kết nối với đồng hồ của bạn qua hệ thống Strava
+          </p>
 
-        {/* Thân Bảng Xếp Hạng */}
-        <div className="bg-white rounded-b-2xl shadow-xl overflow-hidden">
-          
-          <div className="flex justify-end p-4 bg-gray-50 border-b">
-            <button 
-              onClick={fetchData}
-              className="px-4 py-2 bg-orange-100 text-orange-600 font-semibold rounded-lg hover:bg-orange-200 transition-colors"
-            >
-              {loading ? 'Đang tải (Chờ Server dậy)...' : '🔄 Cập nhật dữ liệu & AI'}
-            </button>
-          </div>
+          <a 
+            href={stravaLoginUrl}
+            className="flex items-center justify-center w-full bg-[#FC4C02] text-white py-4 px-6 rounded-xl font-bold text-lg hover:bg-[#E34402] transition-colors shadow-lg hover:shadow-orange-500/50"
+          >
+            {/* Icon Strava Trắng */}
+            <svg className="w-6 h-6 mr-3 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169" />
+            </svg>
+            Kết nối với Strava
+          </a>
 
-          <div className="divide-y divide-gray-200">
-            {leaderboard.length === 0 && !loading ? (
-              <p className="text-center text-gray-500 py-8">Máy chủ Render đang ngủ hoặc Chưa nạp dữ liệu DB!</p>
-            ) : (
-              leaderboard.map((athlete) => (
-                <div key={athlete.strava_id} className="flex items-center p-6 hover:bg-gray-50 transition duration-150">
-                  <div className="flex-shrink-0 w-12 text-center">
-                    <span className={`text-2xl font-black ${athlete.rank === 1 ? 'text-yellow-500' : athlete.rank === 2 ? 'text-gray-400' : athlete.rank === 3 ? 'text-yellow-700' : 'text-gray-300'}`}>
-                      #{athlete.rank}
-                    </span>
-                  </div>
-                  <div className="ml-4 flex-1">
-                    <p className="text-xl font-bold text-gray-900">VĐV {athlete.strava_id}</p>
-                    <p className="text-sm text-gray-500">Mã Strava</p>
-                  </div>
-                  <div className="ml-4 text-right">
-                    {/* Đã sửa thành "score" và "unit" cho chuẩn hệ quy đổi mới */}
-                    <p className="text-3xl font-black text-orange-500">
-                      {athlete.score} <span className="text-lg font-medium text-gray-500">{athlete.unit}</span>
-                    </p>
-                  </div>
-                </div>
-              ))
-            )}
+          <div className="mt-6 text-xs text-gray-400 text-center space-y-2">
+            <p>Hỗ trợ tự động đồng bộ Bơi - Đạp - Chạy.</p>
+            <p>Trọng tài AI chấm điểm 24/7.</p>
           </div>
         </div>
       </div>
