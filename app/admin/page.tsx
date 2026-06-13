@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 export default function UltimateAdminPage() {
   const [events, setEvents] = useState<any[]>([]);
@@ -11,28 +11,37 @@ export default function UltimateAdminPage() {
   const [includeRide, setIncludeRide] = useState(false);
   const [includeSwim, setIncludeSwim] = useState(false);
 
-  // Biến đếm số môn để quyết định ẩn/hiện Hệ số quy đổi điểm
   const selectedSportsCount = [includeRun, includeRide, includeSwim].filter(Boolean).length;
 
-  // 2. Cấu hình CHẠY BỘ (RUN)
+  // 2. Quản lý Quy đổi điểm (Chỉ khả dụng khi >= 2 môn)
+  const [enablePointsConversion, setEnablePointsConversion] = useState(false);
+
+  // Reset tuỳ chọn điểm nếu chọn lại còn 1 môn
+  useEffect(() => {
+    if (selectedSportsCount < 2) {
+      setEnablePointsConversion(false);
+    }
+  }, [selectedSportsCount]);
+
+  // 3. Cấu hình CHẠY BỘ (RUN) - Chuẩn File Quy Định
   const [runConfig, setRunConfig] = useState({ 
-    multiplier: 10, minDistance: 1, maxElapsedTimeMin: 300, 
-    paceMin: 3.5, paceMax: 15, requireGps: true, requirePublic: true, requireElevation: false 
+    multiplier: 10, minDistance: 1.0, movingRatio: 90, 
+    paceMin: 4.0, paceMax: 15.0, requireGps: true, requirePublic: true 
   });
 
-  // 3. Cấu hình ĐẠP XE (RIDE)
+  // 4. Cấu hình ĐẠP XE (RIDE) - Chuẩn File Quy Định
   const [rideConfig, setRideConfig] = useState({ 
-    multiplier: 3, minDistance: 5, maxElapsedTimeMin: 600, 
-    speedMin: 10, speedMax: 45, requireHr: true, requireCadence: true 
+    multiplier: 3, minDistance: 5.0, movingRatio: 85, 
+    speedMin: 15, speedMax: 45, requireHr: true, requireCadence: true, cadenceMin: 60, cadenceMax: 100
   });
 
-  // 4. Cấu hình BƠI LỘI (SWIM)
+  // 5. Cấu hình BƠI LỘI (SWIM) - Chuẩn File Quy Định
   const [swimConfig, setSwimConfig] = useState({ 
-    multiplier: 40, minDistance: 0.5, swimType: "pool", // "pool" hoặc "open"
-    paceMin: 1.5, paceMax: 5, requireHr: false 
+    multiplier: 40, minDistance: 0.1, movingRatio: 90, swimType: "pool",
+    paceMin: 1.5, paceMax: 3.5 
   });
 
-  // 5. Cấu hình ANTI-CHEAT AI
+  // 6. Cấu hình ANTI-CHEAT AI
   const [enableAntiCheat, setEnableAntiCheat] = useState(true);
 
   // Nộp Form
@@ -45,6 +54,7 @@ export default function UltimateAdminPage() {
       id: Date.now(), name: eventName, creator: creatorName, status: "Pending",
       sports: { run: includeRun, ride: includeRide, swim: includeSwim },
       settings: {
+        pointsConversion: enablePointsConversion,
         run: includeRun ? runConfig : null,
         ride: includeRide ? rideConfig : null,
         swim: includeSwim ? swimConfig : null,
@@ -53,7 +63,7 @@ export default function UltimateAdminPage() {
     };
     setEvents([newEvent, ...events]);
     setEventName("");
-    alert("🚀 Đã tạo giải đấu với bộ luật Chuyên Nghiệp! Đang chờ duyệt.");
+    alert("🚀 Đã tạo giải đấu với bộ luật siêu chuẩn! Đang chờ duyệt.");
   };
 
   return (
@@ -69,8 +79,8 @@ export default function UltimateAdminPage() {
 
       <div className="max-w-4xl mx-auto px-4">
         <div className="bg-white rounded-3xl p-6 md:p-10 shadow-lg border border-gray-100">
-          <h2 className="text-3xl font-black text-gray-900 mb-2 uppercase">Thiết lập Giải Đấu Chuyên Nghiệp</h2>
-          <p className="text-gray-500 mb-8 font-medium">Hệ thống hỗ trợ cấu hình sinh học và Anti-Cheat AI.</p>
+          <h2 className="text-3xl font-black text-gray-900 mb-2 uppercase">Thiết lập Giải Đấu</h2>
+          <p className="text-gray-500 mb-8 font-medium">Hỗ trợ đầy đủ bộ quy định Elapsed Time, Moving Ratio và AI Anti-Cheat.</p>
           
           <form onSubmit={handleSubmitEvent} className="space-y-8">
             {/* Thông tin cơ bản */}
@@ -95,22 +105,33 @@ export default function UltimateAdminPage() {
               </div>
             </div>
 
-            {/* Cảnh báo tính điểm */}
+            {/* Tuỳ chọn Quy đổi điểm (Chỉ hiện khi có >= 2 môn) */}
             {selectedSportsCount > 1 && (
-              <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 p-4 rounded-xl text-sm font-bold flex items-center gap-2">
-                <span>⚠️</span> Vì giải đấu có {selectedSportsCount} môn, sếp cần thiết lập "Hệ số quy đổi điểm" cho từng môn để xếp hạng chung.
+              <div className={`p-4 rounded-2xl border-2 flex items-center justify-between transition cursor-pointer ${enablePointsConversion ? 'bg-purple-50 border-purple-200' : 'bg-gray-50 border-gray-200'}`} onClick={() => setEnablePointsConversion(!enablePointsConversion)}>
+                <div>
+                  <h4 className={`text-sm font-black ${enablePointsConversion ? 'text-purple-700' : 'text-gray-600'}`}>🎯 Kích hoạt Hệ thống Quy đổi điểm</h4>
+                  <p className="text-xs text-gray-500 font-medium mt-1">Cho phép xếp hạng chung các VĐV chơi nhiều môn khác nhau.</p>
+                </div>
+                <div className={`w-12 h-6 rounded-full relative transition-colors ${enablePointsConversion ? 'bg-purple-600' : 'bg-gray-300'}`}>
+                  <div className={`w-4 h-4 rounded-full bg-white absolute top-1 transition-all ${enablePointsConversion ? 'left-7' : 'left-1'}`}></div>
+                </div>
               </div>
             )}
 
             {/* BOX CẤU HÌNH CHẠY BỘ */}
             {includeRun && (
               <div className="p-6 bg-white rounded-2xl border-2 border-orange-100 shadow-sm">
-                <h4 className="text-lg font-black text-orange-600 mb-4 border-b pb-2">🏃‍♂️ LUẬT CHẠY BỘ (RUN)</h4>
-                <div className="grid md:grid-cols-3 gap-4 text-sm font-medium">
-                  {selectedSportsCount > 1 && (
-                    <div><label className="text-gray-500 text-xs">Hệ số (1km = ? điểm)</label><input type="number" value={runConfig.multiplier} onChange={(e) => setRunConfig({...runConfig, multiplier: Number(e.target.value)})} className="w-full mt-1 bg-gray-50 border px-3 py-2 rounded-lg" /></div>
+                <div className="flex justify-between items-center mb-4 border-b pb-2">
+                  <h4 className="text-lg font-black text-orange-600">🏃‍♂️ LUẬT CHẠY BỘ</h4>
+                  {enablePointsConversion && (
+                    <div className="flex items-center gap-2 bg-orange-50 px-3 py-1.5 rounded-lg border border-orange-200">
+                      <label className="text-orange-700 text-xs font-bold">Hệ số (1km = ? điểm):</label>
+                      <input type="number" value={runConfig.multiplier} onChange={(e) => setRunConfig({...runConfig, multiplier: Number(e.target.value)})} className="w-16 bg-white border border-orange-200 px-2 py-1 rounded text-center text-sm font-black text-orange-700 focus:outline-none" />
+                    </div>
                   )}
-                  <div><label className="text-gray-500 text-xs">Min/Max Pace (phút/km)</label>
+                </div>
+                <div className="grid md:grid-cols-3 gap-4 text-sm font-medium">
+                  <div><label className="text-gray-500 text-xs">Pace hợp lệ (phút/km)</label>
                     <div className="flex items-center gap-2 mt-1">
                       <input type="number" step="0.1" value={runConfig.paceMin} onChange={(e) => setRunConfig({...runConfig, paceMin: Number(e.target.value)})} className="w-full bg-gray-50 border px-2 py-2 rounded-lg text-center" />
                       <span>-</span>
@@ -118,12 +139,11 @@ export default function UltimateAdminPage() {
                     </div>
                   </div>
                   <div><label className="text-gray-500 text-xs">Cự ly tối thiểu (km)</label><input type="number" step="0.1" value={runConfig.minDistance} onChange={(e) => setRunConfig({...runConfig, minDistance: Number(e.target.value)})} className="w-full mt-1 bg-gray-50 border px-3 py-2 rounded-lg" /></div>
-                  <div><label className="text-gray-500 text-xs">Max Elapsed Time (Phút)</label><input type="number" value={runConfig.maxElapsedTimeMin} onChange={(e) => setRunConfig({...runConfig, maxElapsedTimeMin: Number(e.target.value)})} className="w-full mt-1 bg-gray-50 border px-3 py-2 rounded-lg" /></div>
+                  <div><label className="text-gray-500 text-xs">Tỷ lệ Moving/Elapsed (%)</label><input type="number" value={runConfig.movingRatio} onChange={(e) => setRunConfig({...runConfig, movingRatio: Number(e.target.value)})} className="w-full mt-1 bg-gray-50 border px-3 py-2 rounded-lg" /></div>
                 </div>
                 <div className="mt-4 flex flex-wrap gap-4 text-xs font-bold text-gray-700">
-                  <label className="flex items-center gap-1"><input type="checkbox" checked={runConfig.requireGps} onChange={(e) => setRunConfig({...runConfig, requireGps: e.target.checked})} className="accent-orange-500 w-4 h-4" /> Bắt buộc có GPS</label>
+                  <label className="flex items-center gap-1"><input type="checkbox" checked={runConfig.requireGps} onChange={(e) => setRunConfig({...runConfig, requireGps: e.target.checked})} className="accent-orange-500 w-4 h-4" /> Bắt buộc GPS</label>
                   <label className="flex items-center gap-1"><input type="checkbox" checked={runConfig.requirePublic} onChange={(e) => setRunConfig({...runConfig, requirePublic: e.target.checked})} className="accent-orange-500 w-4 h-4" /> Hoạt động Public</label>
-                  <label className="flex items-center gap-1"><input type="checkbox" checked={runConfig.requireElevation} onChange={(e) => setRunConfig({...runConfig, requireElevation: e.target.checked})} className="accent-orange-500 w-4 h-4" /> Ghi nhận Elevation</label>
                 </div>
               </div>
             )}
@@ -131,23 +151,36 @@ export default function UltimateAdminPage() {
             {/* BOX CẤU HÌNH ĐẠP XE */}
             {includeRide && (
               <div className="p-6 bg-white rounded-2xl border-2 border-blue-100 shadow-sm">
-                <h4 className="text-lg font-black text-blue-600 mb-4 border-b pb-2">🚴 LUẬT ĐẠP XE (RIDE)</h4>
-                <div className="grid md:grid-cols-3 gap-4 text-sm font-medium">
-                  {selectedSportsCount > 1 && (
-                    <div><label className="text-gray-500 text-xs">Hệ số (1km = ? điểm)</label><input type="number" value={rideConfig.multiplier} onChange={(e) => setRideConfig({...rideConfig, multiplier: Number(e.target.value)})} className="w-full mt-1 bg-gray-50 border px-3 py-2 rounded-lg" /></div>
+                 <div className="flex justify-between items-center mb-4 border-b pb-2">
+                  <h4 className="text-lg font-black text-blue-600">🚴 LUẬT ĐẠP XE</h4>
+                  {enablePointsConversion && (
+                    <div className="flex items-center gap-2 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200">
+                      <label className="text-blue-700 text-xs font-bold">Hệ số (1km = ? điểm):</label>
+                      <input type="number" value={rideConfig.multiplier} onChange={(e) => setRideConfig({...rideConfig, multiplier: Number(e.target.value)})} className="w-16 bg-white border border-blue-200 px-2 py-1 rounded text-center text-sm font-black text-blue-700 focus:outline-none" />
+                    </div>
                   )}
-                  <div><label className="text-gray-500 text-xs">Tốc độ (km/h) [Min-Max]</label>
+                </div>
+                <div className="grid md:grid-cols-4 gap-4 text-sm font-medium">
+                  <div><label className="text-gray-500 text-xs">Tốc độ (km/h)</label>
                     <div className="flex items-center gap-2 mt-1">
-                      <input type="number" value={rideConfig.speedMin} onChange={(e) => setRideConfig({...rideConfig, speedMin: Number(e.target.value)})} className="w-full bg-gray-50 border px-2 py-2 rounded-lg text-center" />
+                      <input type="number" value={rideConfig.speedMin} onChange={(e) => setRideConfig({...rideConfig, speedMin: Number(e.target.value)})} className="w-full bg-gray-50 border px-2 py-2 rounded-lg text-center p-1" />
                       <span>-</span>
-                      <input type="number" value={rideConfig.speedMax} onChange={(e) => setRideConfig({...rideConfig, speedMax: Number(e.target.value)})} className="w-full bg-gray-50 border px-2 py-2 rounded-lg text-center" />
+                      <input type="number" value={rideConfig.speedMax} onChange={(e) => setRideConfig({...rideConfig, speedMax: Number(e.target.value)})} className="w-full bg-gray-50 border px-2 py-2 rounded-lg text-center p-1" />
+                    </div>
+                  </div>
+                  <div><label className="text-gray-500 text-xs">Guồng (rpm)</label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <input type="number" value={rideConfig.cadenceMin} onChange={(e) => setRideConfig({...rideConfig, cadenceMin: Number(e.target.value)})} className="w-full bg-gray-50 border px-2 py-2 rounded-lg text-center p-1" />
+                      <span>-</span>
+                      <input type="number" value={rideConfig.cadenceMax} onChange={(e) => setRideConfig({...rideConfig, cadenceMax: Number(e.target.value)})} className="w-full bg-gray-50 border px-2 py-2 rounded-lg text-center p-1" />
                     </div>
                   </div>
                   <div><label className="text-gray-500 text-xs">Cự ly tối thiểu (km)</label><input type="number" step="0.1" value={rideConfig.minDistance} onChange={(e) => setRideConfig({...rideConfig, minDistance: Number(e.target.value)})} className="w-full mt-1 bg-gray-50 border px-3 py-2 rounded-lg" /></div>
+                  <div><label className="text-gray-500 text-xs">Moving/Elapsed (%)</label><input type="number" value={rideConfig.movingRatio} onChange={(e) => setRideConfig({...rideConfig, movingRatio: Number(e.target.value)})} className="w-full mt-1 bg-gray-50 border px-3 py-2 rounded-lg" /></div>
                 </div>
                 <div className="mt-4 flex flex-wrap gap-4 text-xs font-bold text-gray-700">
-                  <label className="flex items-center gap-1"><input type="checkbox" checked={rideConfig.requireHr} onChange={(e) => setRideConfig({...rideConfig, requireHr: e.target.checked})} className="accent-blue-500 w-4 h-4" /> Bắt buộc có Nhịp tim (HR)</label>
-                  <label className="flex items-center gap-1"><input type="checkbox" checked={rideConfig.requireCadence} onChange={(e) => setRideConfig({...rideConfig, requireCadence: e.target.checked})} className="accent-blue-500 w-4 h-4" /> Bắt buộc có Guồng chân (Cadence)</label>
+                  <label className="flex items-center gap-1"><input type="checkbox" checked={rideConfig.requireHr} onChange={(e) => setRideConfig({...rideConfig, requireHr: e.target.checked})} className="accent-blue-500 w-4 h-4" /> Bắt buộc Nhịp tim (HR)</label>
+                  <label className="flex items-center gap-1"><input type="checkbox" checked={rideConfig.requireCadence} onChange={(e) => setRideConfig({...rideConfig, requireCadence: e.target.checked})} className="accent-blue-500 w-4 h-4" /> Bắt buộc Guồng chân</label>
                 </div>
               </div>
             )}
@@ -155,20 +188,23 @@ export default function UltimateAdminPage() {
             {/* BOX CẤU HÌNH BƠI LỘI */}
             {includeSwim && (
               <div className="p-6 bg-white rounded-2xl border-2 border-cyan-100 shadow-sm">
-                <h4 className="text-lg font-black text-cyan-600 mb-4 border-b pb-2">🏊 LUẬT BƠI LỘI (SWIM)</h4>
-                
+                <div className="flex justify-between items-center mb-4 border-b pb-2">
+                  <h4 className="text-lg font-black text-cyan-600">🏊 LUẬT BƠI LỘI</h4>
+                  {enablePointsConversion && (
+                    <div className="flex items-center gap-2 bg-cyan-50 px-3 py-1.5 rounded-lg border border-cyan-200">
+                      <label className="text-cyan-700 text-xs font-bold">Hệ số (1km = ? điểm):</label>
+                      <input type="number" value={swimConfig.multiplier} onChange={(e) => setSwimConfig({...swimConfig, multiplier: Number(e.target.value)})} className="w-16 bg-white border border-cyan-200 px-2 py-1 rounded text-center text-sm font-black text-cyan-700 focus:outline-none" />
+                    </div>
+                  )}
+                </div>
                 <div className="mb-4">
-                  <label className="text-gray-500 text-xs font-bold block mb-2">Loại hình bơi (Quyết định GPS)</label>
+                  <label className="text-gray-500 text-xs font-bold block mb-2">Loại hình bơi (Xác định GPS)</label>
                   <div className="flex gap-4">
-                    <label className="flex items-center gap-2 text-sm font-bold"><input type="radio" name="swimType" checked={swimConfig.swimType === "open"} onChange={() => setSwimConfig({...swimConfig, swimType: "open"})} className="accent-cyan-500" /> Bơi biển/Hồ (Bắt buộc GPS)</label>
+                    <label className="flex items-center gap-2 text-sm font-bold"><input type="radio" name="swimType" checked={swimConfig.swimType === "open"} onChange={() => setSwimConfig({...swimConfig, swimType: "open"})} className="accent-cyan-500" /> Bơi biển/Hồ (Có GPS)</label>
                     <label className="flex items-center gap-2 text-sm font-bold"><input type="radio" name="swimType" checked={swimConfig.swimType === "pool"} onChange={() => setSwimConfig({...swimConfig, swimType: "pool"})} className="accent-cyan-500" /> Bơi bể (Không cần GPS)</label>
                   </div>
                 </div>
-
                 <div className="grid md:grid-cols-3 gap-4 text-sm font-medium">
-                  {selectedSportsCount > 1 && (
-                    <div><label className="text-gray-500 text-xs">Hệ số (1km = ? điểm)</label><input type="number" value={swimConfig.multiplier} onChange={(e) => setSwimConfig({...swimConfig, multiplier: Number(e.target.value)})} className="w-full mt-1 bg-gray-50 border px-3 py-2 rounded-lg" /></div>
-                  )}
                   <div><label className="text-gray-500 text-xs">Pace Bơi (phút/100m)</label>
                     <div className="flex items-center gap-2 mt-1">
                       <input type="number" step="0.1" value={swimConfig.paceMin} onChange={(e) => setSwimConfig({...swimConfig, paceMin: Number(e.target.value)})} className="w-full bg-gray-50 border px-2 py-2 rounded-lg text-center" />
@@ -177,9 +213,7 @@ export default function UltimateAdminPage() {
                     </div>
                   </div>
                   <div><label className="text-gray-500 text-xs">Cự ly tối thiểu (km)</label><input type="number" step="0.1" value={swimConfig.minDistance} onChange={(e) => setSwimConfig({...swimConfig, minDistance: Number(e.target.value)})} className="w-full mt-1 bg-gray-50 border px-3 py-2 rounded-lg" /></div>
-                </div>
-                <div className="mt-4 flex flex-wrap gap-4 text-xs font-bold text-gray-700">
-                  <label className="flex items-center gap-1"><input type="checkbox" checked={swimConfig.requireHr} onChange={(e) => setSwimConfig({...swimConfig, requireHr: e.target.checked})} className="accent-cyan-500 w-4 h-4" /> Bắt buộc có Nhịp tim (HR)</label>
+                  <div><label className="text-gray-500 text-xs">Tỷ lệ Moving/Elapsed (%)</label><input type="number" value={swimConfig.movingRatio} onChange={(e) => setSwimConfig({...swimConfig, movingRatio: Number(e.target.value)})} className="w-full mt-1 bg-gray-50 border px-3 py-2 rounded-lg" /></div>
                 </div>
               </div>
             )}
@@ -188,8 +222,8 @@ export default function UltimateAdminPage() {
             <div className={`p-5 rounded-2xl border-2 flex items-start gap-4 transition ${enableAntiCheat ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'}`}>
               <input type="checkbox" checked={enableAntiCheat} onChange={(e) => setEnableAntiCheat(e.target.checked)} className="w-6 h-6 mt-1 accent-red-600 cursor-pointer" />
               <div>
-                <h4 className={`text-lg font-black ${enableAntiCheat ? 'text-red-700' : 'text-gray-500'}`}>🤖 Kích hoạt AI Anti-Cheat (Chống gian lận)</h4>
-                <p className="text-sm text-gray-600 mt-1 font-medium">Hệ thống sẽ tự động đối chiếu chéo <span className="font-bold text-gray-800">Nhịp tim - Tốc độ - Guồng chân</span>. (Ví dụ: Chạy pace 3:00 nhưng Nhịp tim 90bpm ➔ Đánh dấu vi phạm "Nghi ngờ đi xe máy"). Khi phát hiện vi phạm, log sẽ không được tính điểm và sinh ra <b>Báo cáo vi phạm chi tiết</b>.</p>
+                <h4 className={`text-lg font-black ${enableAntiCheat ? 'text-red-700' : 'text-gray-500'}`}>🤖 Kích hoạt AI Anti-Cheat & Báo cáo vi phạm</h4>
+                <p className="text-sm text-gray-600 mt-1 font-medium">Đối chiếu chéo <span className="font-bold text-gray-800">Nhịp tim - Tốc độ - Guồng chân</span>. Tracklog vi phạm sẽ bị hủy và xuất "Báo cáo vi phạm" chi tiết lỗi (Ví dụ: <i>Pace 3:00 nhưng nhịp tim 90bpm</i>).</p>
               </div>
             </div>
 
