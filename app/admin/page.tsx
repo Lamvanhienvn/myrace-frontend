@@ -1,296 +1,203 @@
 "use client";
 import React, { useState } from 'react';
 
-export default function AdvancedAdminPage() {
-  // Quản lý danh sách giải đấu (Dữ liệu mẫu)
-  const [events, setEvents] = useState([
-    {
-      id: 201,
-      name: "Thử Thách Ba Môn Phối Hợp Sài Gòn",
-      creator: "Ban Tổ Chức Ironman",
-      status: "Pending",
-      sports: { run: true, ride: true, swim: true },
-      settings: {
-        run: { multiplier: 10, minDistance: 2, requireGps: true },
-        ride: { multiplier: 3, minDistance: 5, requireGps: true },
-        swim: { multiplier: 40, minDistance: 0.5, requireGps: false }
-      }
-    },
-    {
-      id: 1,
-      name: "Thử thách tháng 6 - Vượt qua giới hạn",
-      creator: "Sếp Hiển",
-      status: "Approved",
-      sports: { run: true, ride: false, swim: false },
-      settings: {
-        run: { multiplier: 10, minDistance: 0, requireGps: false }
-      }
-    }
-  ]);
-
-  // State quản lý Form tạo giải mới
+export default function UltimateAdminPage() {
+  const [events, setEvents] = useState<any[]>([]);
   const [eventName, setEventName] = useState("");
   const [creatorName, setCreatorName] = useState("");
   
-  // State bật/tắt các môn thể thao trong giải
+  // 1. Quản lý môn thi đấu
   const [includeRun, setIncludeRun] = useState(true);
   const [includeRide, setIncludeRide] = useState(false);
   const [includeSwim, setIncludeSwim] = useState(false);
 
-  // State cấu hình chi tiết cho từng môn
-  const [runConfig, setRunConfig] = useState({ multiplier: 10, minDistance: 1, requireGps: true });
-  const [rideConfig, setRideConfig] = useState({ multiplier: 3, minDistance: 5, requireGps: true });
-  const [swimConfig, setSwimConfig] = useState({ multiplier: 40, minDistance: 0.2, requireGps: false });
+  // Biến đếm số môn để quyết định ẩn/hiện Hệ số quy đổi điểm
+  const selectedSportsCount = [includeRun, includeRide, includeSwim].filter(Boolean).length;
 
-  // Xử lý duyệt giải
-  const handleApprove = (id: number) => {
-    setEvents(events.map(ev => ev.id === id ? { ...ev, status: "Approved" } : ev));
-    alert(`🎉 Phê duyệt thành công giải đấu #${id}! Động cơ AI Trọng tài đã được nạp luật chơi.`);
-  };
+  // 2. Cấu hình CHẠY BỘ (RUN)
+  const [runConfig, setRunConfig] = useState({ 
+    multiplier: 10, minDistance: 1, maxElapsedTimeMin: 300, 
+    paceMin: 3.5, paceMax: 15, requireGps: true, requirePublic: true, requireElevation: false 
+  });
 
-  // Xử lý từ chối
-  const handleReject = (id: number) => {
-    setEvents(events.filter(ev => ev.id !== id));
-  };
+  // 3. Cấu hình ĐẠP XE (RIDE)
+  const [rideConfig, setRideConfig] = useState({ 
+    multiplier: 3, minDistance: 5, maxElapsedTimeMin: 600, 
+    speedMin: 10, speedMax: 45, requireHr: true, requireCadence: true 
+  });
 
-  // Xử lý nộp form tạo giải
+  // 4. Cấu hình BƠI LỘI (SWIM)
+  const [swimConfig, setSwimConfig] = useState({ 
+    multiplier: 40, minDistance: 0.5, swimType: "pool", // "pool" hoặc "open"
+    paceMin: 1.5, paceMax: 5, requireHr: false 
+  });
+
+  // 5. Cấu hình ANTI-CHEAT AI
+  const [enableAntiCheat, setEnableAntiCheat] = useState(true);
+
+  // Nộp Form
   const handleSubmitEvent = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!eventName || !creatorName) return alert("Sếp điền đầy đủ Tên giải và Người tổ chức nhé!");
-    if (!includeRun && !includeRide && !includeSwim) return alert("Sếp phải chọn ít nhất 1 môn thi đấu cho giải chứ ạ!");
-
-    const finalSettings: any = {};
-    if (includeRun) finalSettings.run = runConfig;
-    if (includeRide) finalSettings.ride = rideConfig;
-    if (includeSwim) finalSettings.swim = swimConfig;
+    if (!eventName || !creatorName) return alert("Vui lòng điền Tên giải và Người tổ chức!");
+    if (selectedSportsCount === 0) return alert("Phải chọn ít nhất 1 môn thi đấu!");
 
     const newEvent = {
-      id: Date.now(),
-      name: eventName,
-      creator: creatorName,
-      status: "Pending",
+      id: Date.now(), name: eventName, creator: creatorName, status: "Pending",
       sports: { run: includeRun, ride: includeRide, swim: includeSwim },
-      settings: finalSettings
+      settings: {
+        run: includeRun ? runConfig : null,
+        ride: includeRide ? rideConfig : null,
+        swim: includeSwim ? swimConfig : null,
+        antiCheat: enableAntiCheat
+      }
     };
-
     setEvents([newEvent, ...events]);
     setEventName("");
-    alert("🚀 Gửi giải đấu lên hệ thống thành công! Đang chờ Admin phê duyệt.");
+    alert("🚀 Đã tạo giải đấu với bộ luật Chuyên Nghiệp! Đang chờ duyệt.");
   };
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20 text-gray-800 font-sans">
-      {/* Navbar điều hướng */}
-      <nav className="bg-white shadow-xs px-6 py-4 flex justify-between items-center mb-8 border-b border-gray-100">
+      <nav className="bg-white shadow-sm px-6 py-4 flex justify-between items-center mb-8">
         <h1 className="text-2xl font-black tracking-tighter">
-          MY<span className="text-orange-500">RACE</span> <span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded-md ml-2">Console</span>
+          MY<span className="text-orange-500">RACE</span> <span className="text-xs bg-red-600 text-white px-2 py-1 rounded-md ml-2">PRO ADMIN</span>
         </h1>
         <div className="flex gap-4 font-bold text-sm text-gray-500">
-          <a href="/profile?id=33415712" className="hover:text-orange-500 transition">Dashboard</a>
-          <a href="/leaderboard" className="hover:text-orange-500 transition">Leaderboard</a>
+          <a href="/profile?id=33415712" className="hover:text-orange-500">Dashboard</a>
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
-        {/* BÊN TRÁI: BẢNG KIỂM SOÁT DUYỆT GIẢI ĐẤU (Chiếm 7 cột) */}
-        <div className="lg:col-span-7 space-y-6">
-          <div className="bg-white rounded-3xl p-6 shadow-xs border border-gray-100">
-            <h2 className="text-2xl font-black text-gray-900 mb-6 flex items-center gap-2 tracking-tight">
-              <span>⏳</span> DANH SÁCH CHỜ PHÊ DUYỆT ({events.filter(e => e.status === "Pending").length})
-            </h2>
-
-            <div className="space-y-4">
-              {events.filter(e => e.status === "Pending").length === 0 ? (
-                <p className="text-gray-400 font-medium text-center py-8">Không có giải đấu nào đang chờ phê duyệt. Sếp có thể thong thả! ☕</p>
-              ) : (
-                events.filter(e => e.status === "Pending").map((ev) => (
-                  <div key={ev.id} className="p-5 bg-gray-50/50 rounded-2xl border border-gray-200 flex flex-col justify-between gap-4 transition hover:shadow-sm">
-                    <div className="w-full">
-                      <div className="flex justify-between items-start">
-                        <span className="bg-gray-200 text-gray-700 text-[10px] font-black px-2 py-0.5 rounded-sm uppercase">Event ID: #{ev.id}</span>
-                        <span className="text-xs bg-orange-100 text-orange-600 font-bold px-2 py-0.5 rounded-full">Chờ duyệt</span>
-                      </div>
-                      <h3 className="font-black text-lg text-gray-900 mt-2">{ev.name}</h3>
-                      <p className="text-sm text-gray-500 font-medium mt-0.5">Người tổ chức: <span className="text-gray-800 font-bold">{ev.creator}</span></p>
-                      
-                      {/* Bảng phân tích thông số kỹ thuật được cấu hình sâu */}
-                      <div className="mt-4 overflow-hidden border border-gray-100 rounded-xl bg-white shadow-2xs">
-                        <table className="w-full text-left text-xs">
-                          <thead className="bg-gray-100 text-gray-600 font-bold uppercase tracking-wider">
-                            <tr>
-                              <th className="px-4 py-2">Môn thi đấu</th>
-                              <th className="px-4 py-2 text-center">Hệ số nhân</th>
-                              <th className="px-4 py-2 text-center">Min Km/Cuốc</th>
-                              <th className="px-4 py-2 text-center">Yêu cầu GPS</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-gray-100 font-medium text-gray-700">
-                            {ev.settings.run && (
-                              <tr>
-                                <td className="px-4 py-2 font-bold">🏃‍♂️ Chạy bộ (Run)</td>
-                                <td className="px-4 py-2 text-center text-orange-600 font-black">x{ev.settings.run.multiplier}</td>
-                                <td className="px-4 py-2 text-center">{ev.settings.run.minDistance} km</td>
-                                <td className="px-4 py-2 text-center">{ev.settings.run.requireGps ? "✅ Bắt buộc" : "❌ Không"}</td>
-                              </tr>
-                            )}
-                            {ev.settings.ride && (
-                              <tr>
-                                <td className="px-4 py-2 font-bold">🚴 Đạp xe (Ride)</td>
-                                <td className="px-4 py-2 text-center text-blue-600 font-black">x{ev.settings.ride.multiplier}</td>
-                                <td className="px-4 py-2 text-center">{ev.settings.ride.minDistance} km</td>
-                                <td className="px-4 py-2 text-center">{ev.settings.ride.requireGps ? "✅ Bắt buộc" : "❌ Không"}</td>
-                              </tr>
-                            )}
-                            {ev.settings.swim && (
-                              <tr>
-                                <td className="px-4 py-2 font-bold">🏊 Bơi lội (Swim)</td>
-                                <td className="px-4 py-2 text-center text-cyan-600 font-black">x{ev.settings.swim.multiplier}</td>
-                                <td className="px-4 py-2 text-center">{ev.settings.swim.minDistance} km</td>
-                                <td className="px-4 py-2 text-center">{ev.settings.swim.requireGps ? "✅ Bắt buộc" : "❌ Không"}</td>
-                              </tr>
-                            )}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                    
-                    <div className="flex gap-2 w-full justify-end border-t border-gray-100 pt-3">
-                      <button onClick={() => handleApprove(ev.id)} className="bg-green-500 hover:bg-green-600 text-white font-bold px-4 py-2 rounded-xl text-xs shadow-xs transition">
-                        Phê duyệt giải
-                      </button>
-                      <button onClick={() => handleReject(ev.id)} className="bg-gray-200 hover:bg-gray-300 text-gray-600 font-bold px-4 py-2 rounded-xl text-xs transition">
-                        Từ chối
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* Các giải đấu ĐANG HOẠT ĐỘNG */}
-          <div className="bg-white rounded-3xl p-6 shadow-xs border border-gray-100">
-            <h2 className="text-xl font-bold text-gray-900 mb-4 tracking-tight uppercase">🟢 GIẢI ĐẤU ĐANG HOẠT ĐỘNG</h2>
-            <div className="divide-y divide-gray-100">
-              {events.filter(e => e.status === "Approved").map((ev) => (
-                <div key={ev.id} className="py-4 flex justify-between items-center first:pt-0 last:pb-0">
-                  <div>
-                    <h4 className="font-extrabold text-gray-800">{ev.name}</h4>
-                    <p className="text-xs text-gray-400 mt-1">Cấu hình: {Object.keys(ev.settings).map(k => k.toUpperCase()).join(' + ')}</p>
-                  </div>
-                  <span className="bg-green-100 text-green-700 font-bold px-3 py-1 rounded-full text-xs">Active</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* BÊN PHẢI: FORM CẤU HÌNH TẠO GIẢI ĐA MÔN ĐỘNG (Chiếm 5 cột) */}
-        <div className="lg:col-span-5 bg-white rounded-3xl p-6 shadow-xs border border-gray-100 h-fit">
-          <h2 className="text-2xl font-black text-gray-900 mb-6 tracking-tight uppercase">➕ THIẾT LẬP GIẢI ĐẤU MỚI</h2>
+      <div className="max-w-4xl mx-auto px-4">
+        <div className="bg-white rounded-3xl p-6 md:p-10 shadow-lg border border-gray-100">
+          <h2 className="text-3xl font-black text-gray-900 mb-2 uppercase">Thiết lập Giải Đấu Chuyên Nghiệp</h2>
+          <p className="text-gray-500 mb-8 font-medium">Hệ thống hỗ trợ cấu hình sinh học và Anti-Cheat AI.</p>
           
-          <form onSubmit={handleSubmitEvent} className="space-y-6">
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Tên giải đấu / Sự kiện</label>
-              <input type="text" value={eventName} onChange={(e) => setEventName(e.target.value)} placeholder="Ví dụ: Thử Thách Ba Môn Phối Hợp..." className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:border-orange-500 transition" />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Tên đơn vị / Người tổ chức</label>
-              <input type="text" value={creatorName} onChange={(e) => setCreatorName(e.target.value)} placeholder="Ví dụ: Công ty Sếp Hiển..." className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:border-orange-500 transition" />
-            </div>
-
-            {/* BẢNG CHỌN SỐ LƯỢNG MÔN THI ĐẤU */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">Lựa chọn các môn thi đấu áp dụng</label>
-              <div className="grid grid-cols-3 gap-2">
-                <button type="button" onClick={() => setIncludeRun(!includeRun)} className={`p-3 rounded-xl border-2 text-center text-xs font-bold flex flex-col items-center gap-1 transition ${includeRun ? 'border-orange-500 bg-orange-50 text-orange-700 shadow-2xs' : 'border-gray-100 bg-gray-50 text-gray-400'}`}>
-                  <span className="text-xl">🏃‍♂️</span> Chạy Bộ
-                </button>
-                <button type="button" onClick={() => setIncludeRide(!includeRide)} className={`p-3 rounded-xl border-2 text-center text-xs font-bold flex flex-col items-center gap-1 transition ${includeRide ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-2xs' : 'border-gray-100 bg-gray-50 text-gray-400'}`}>
-                  <span className="text-xl">🚴</span> Đạp Xe
-                </button>
-                <button type="button" onClick={() => setIncludeSwim(!includeSwim)} className={`p-3 rounded-xl border-2 text-center text-xs font-bold flex flex-col items-center gap-1 transition ${includeSwim ? 'border-cyan-500 bg-cyan-50 text-cyan-700 shadow-2xs' : 'border-gray-100 bg-gray-50 text-gray-400'}`}>
-                  <span className="text-xl">🏊</span> Bơi Lội
-                </button>
+          <form onSubmit={handleSubmitEvent} className="space-y-8">
+            {/* Thông tin cơ bản */}
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Tên giải đấu</label>
+                <input type="text" value={eventName} onChange={(e) => setEventName(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 font-bold focus:border-orange-500 outline-none" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Người tổ chức</label>
+                <input type="text" value={creatorName} onChange={(e) => setCreatorName(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 font-bold focus:border-orange-500 outline-none" />
               </div>
             </div>
 
-            {/* CẤU HÌNH THÔNG SỐ ĐỘNG - CHỈ HIỆN KHI MÔN ĐÓ ĐƯỢC BẬT */}
-            <div className="space-y-4 border-t border-gray-100 pt-4">
-              
-              {/* Cấu hình Chạy bộ */}
-              {includeRun && (
-                <div className="p-4 bg-orange-50/40 rounded-2xl border border-orange-100 animate-fade-in">
-                  <h4 className="text-xs font-black text-orange-700 uppercase tracking-wider mb-3 flex items-center gap-1">⚙️ Bảng cài đặt thông số Chạy Bộ</h4>
-                  <div className="grid grid-cols-2 gap-3 text-xs font-bold">
-                    <div>
-                      <label className="text-gray-500 block mb-1">Hệ số quy đổi (1km = ? điểm)</label>
-                      <input type="number" value={runConfig.multiplier} onChange={(e) => setRunConfig({...runConfig, multiplier: Number(e.target.value)})} className="w-full bg-white border border-gray-200 px-3 py-2 rounded-xl text-center focus:outline-none" />
-                    </div>
-                    <div>
-                      <label className="text-gray-500 block mb-1">Min Km / Cuốc chạy</label>
-                      <input type="number" step="0.1" value={runConfig.minDistance} onChange={(e) => setRunConfig({...runConfig, minDistance: Number(e.target.value)})} className="w-full bg-white border border-gray-200 px-3 py-2 rounded-xl text-center focus:outline-none" />
-                    </div>
-                  </div>
-                  <label className="flex items-center gap-2 mt-3 text-xs font-bold text-gray-600 select-none cursor-pointer">
-                    <input type="checkbox" checked={runConfig.requireGps} onChange={(e) => setRunConfig({...runConfig, requireGps: e.target.checked})} className="rounded text-orange-500 focus:ring-orange-500" />
-                    <span>Yêu cầu bắt buộc dữ liệu bản đồ GPS (Chống cheat)</span>
-                  </label>
-                </div>
-              )}
-
-              {/* Cấu hình Đạp xe */}
-              {includeRide && (
-                <div className="p-4 bg-blue-50/40 rounded-2xl border border-blue-100 animate-fade-in">
-                  <h4 className="text-xs font-black text-blue-700 uppercase tracking-wider mb-3 flex items-center gap-1">⚙️ Bảng cài đặt thông số Đạp Xe</h4>
-                  <div className="grid grid-cols-2 gap-3 text-xs font-bold">
-                    <div>
-                      <label className="text-gray-500 block mb-1">Hệ số quy đổi (1km = ? điểm)</label>
-                      <input type="number" value={rideConfig.multiplier} onChange={(e) => setRideConfig({...rideConfig, multiplier: Number(e.target.value)})} className="w-full bg-white border border-gray-200 px-3 py-2 rounded-xl text-center focus:outline-none" />
-                    </div>
-                    <div>
-                      <label className="text-gray-500 block mb-1">Min Km / Cuốc đạp</label>
-                      <input type="number" step="0.1" value={rideConfig.minDistance} onChange={(e) => setRideConfig({...rideConfig, minDistance: Number(e.target.value)})} className="w-full bg-white border border-gray-200 px-3 py-2 rounded-xl text-center focus:outline-none" />
-                    </div>
-                  </div>
-                  <label className="flex items-center gap-2 mt-3 text-xs font-bold text-gray-600 select-none cursor-pointer">
-                    <input type="checkbox" checked={rideConfig.requireGps} onChange={(e) => setRideConfig({...rideConfig, requireGps: e.target.checked})} className="rounded text-blue-500 focus:ring-blue-500" />
-                    <span>Yêu cầu bắt buộc dữ liệu bản đồ GPS (Chống cheat)</span>
-                  </label>
-                </div>
-              )}
-
-              {/* Cấu hình Bơi lội */}
-              {includeSwim && (
-                <div className="p-4 bg-cyan-50/40 rounded-2xl border border-cyan-100 animate-fade-in">
-                  <h4 className="text-xs font-black text-cyan-700 uppercase tracking-wider mb-3 flex items-center gap-1">⚙️ Bảng cài đặt thông số Bơi Lội</h4>
-                  <div className="grid grid-cols-2 gap-3 text-xs font-bold">
-                    <div>
-                      <label className="text-gray-500 block mb-1">Hệ số quy đổi (1km = ? điểm)</label>
-                      <input type="number" value={swimConfig.multiplier} onChange={(e) => setSwimConfig({...swimConfig, multiplier: Number(e.target.value)})} className="w-full bg-white border border-gray-200 px-3 py-2 rounded-xl text-center focus:outline-none" />
-                    </div>
-                    <div>
-                      <label className="text-gray-500 block mb-1">Min Km / Cuốc bơi</label>
-                      <input type="number" step="0.1" value={swimConfig.minDistance} onChange={(e) => setSwimConfig({...swimConfig, minDistance: Number(e.target.value)})} className="w-full bg-white border border-gray-200 px-3 py-2 rounded-xl text-center focus:outline-none" />
-                    </div>
-                  </div>
-                  <label className="flex items-center gap-2 mt-3 text-xs font-bold text-gray-600 select-none cursor-pointer">
-                    <input type="checkbox" checked={swimConfig.requireGps} onChange={(e) => setSwimConfig({...swimConfig, requireGps: e.target.checked})} className="rounded text-cyan-500 focus:ring-cyan-500" />
-                    <span>Yêu cầu bắt buộc dữ liệu bản đồ GPS (Chống cheat)</span>
-                  </label>
-                </div>
-              )}
-
+            {/* Chọn môn */}
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">Chọn môn thi đấu ({selectedSportsCount} môn)</label>
+              <div className="grid grid-cols-3 gap-4">
+                <button type="button" onClick={() => setIncludeRun(!includeRun)} className={`py-4 rounded-2xl border-2 font-black transition ${includeRun ? 'border-orange-500 bg-orange-50 text-orange-700' : 'border-gray-100 bg-gray-50 text-gray-400'}`}>🏃 RUN</button>
+                <button type="button" onClick={() => setIncludeRide(!includeRide)} className={`py-4 rounded-2xl border-2 font-black transition ${includeRide ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-100 bg-gray-50 text-gray-400'}`}>🚴 RIDE</button>
+                <button type="button" onClick={() => setIncludeSwim(!includeSwim)} className={`py-4 rounded-2xl border-2 font-black transition ${includeSwim ? 'border-cyan-500 bg-cyan-50 text-cyan-700' : 'border-gray-100 bg-gray-50 text-gray-400'}`}>🏊 SWIM</button>
+              </div>
             </div>
 
-            <button type="submit" className="w-full bg-orange-500 hover:bg-orange-600 text-white font-black py-4 rounded-xl text-sm shadow-md transition transform hover:-translate-y-0.5">
-              GỬI YÊU CẦU DUYỆT GIẢI ĐẤU
+            {/* Cảnh báo tính điểm */}
+            {selectedSportsCount > 1 && (
+              <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 p-4 rounded-xl text-sm font-bold flex items-center gap-2">
+                <span>⚠️</span> Vì giải đấu có {selectedSportsCount} môn, sếp cần thiết lập "Hệ số quy đổi điểm" cho từng môn để xếp hạng chung.
+              </div>
+            )}
+
+            {/* BOX CẤU HÌNH CHẠY BỘ */}
+            {includeRun && (
+              <div className="p-6 bg-white rounded-2xl border-2 border-orange-100 shadow-sm">
+                <h4 className="text-lg font-black text-orange-600 mb-4 border-b pb-2">🏃‍♂️ LUẬT CHẠY BỘ (RUN)</h4>
+                <div className="grid md:grid-cols-3 gap-4 text-sm font-medium">
+                  {selectedSportsCount > 1 && (
+                    <div><label className="text-gray-500 text-xs">Hệ số (1km = ? điểm)</label><input type="number" value={runConfig.multiplier} onChange={(e) => setRunConfig({...runConfig, multiplier: Number(e.target.value)})} className="w-full mt-1 bg-gray-50 border px-3 py-2 rounded-lg" /></div>
+                  )}
+                  <div><label className="text-gray-500 text-xs">Min/Max Pace (phút/km)</label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <input type="number" step="0.1" value={runConfig.paceMin} onChange={(e) => setRunConfig({...runConfig, paceMin: Number(e.target.value)})} className="w-full bg-gray-50 border px-2 py-2 rounded-lg text-center" />
+                      <span>-</span>
+                      <input type="number" step="0.1" value={runConfig.paceMax} onChange={(e) => setRunConfig({...runConfig, paceMax: Number(e.target.value)})} className="w-full bg-gray-50 border px-2 py-2 rounded-lg text-center" />
+                    </div>
+                  </div>
+                  <div><label className="text-gray-500 text-xs">Cự ly tối thiểu (km)</label><input type="number" step="0.1" value={runConfig.minDistance} onChange={(e) => setRunConfig({...runConfig, minDistance: Number(e.target.value)})} className="w-full mt-1 bg-gray-50 border px-3 py-2 rounded-lg" /></div>
+                  <div><label className="text-gray-500 text-xs">Max Elapsed Time (Phút)</label><input type="number" value={runConfig.maxElapsedTimeMin} onChange={(e) => setRunConfig({...runConfig, maxElapsedTimeMin: Number(e.target.value)})} className="w-full mt-1 bg-gray-50 border px-3 py-2 rounded-lg" /></div>
+                </div>
+                <div className="mt-4 flex flex-wrap gap-4 text-xs font-bold text-gray-700">
+                  <label className="flex items-center gap-1"><input type="checkbox" checked={runConfig.requireGps} onChange={(e) => setRunConfig({...runConfig, requireGps: e.target.checked})} className="accent-orange-500 w-4 h-4" /> Bắt buộc có GPS</label>
+                  <label className="flex items-center gap-1"><input type="checkbox" checked={runConfig.requirePublic} onChange={(e) => setRunConfig({...runConfig, requirePublic: e.target.checked})} className="accent-orange-500 w-4 h-4" /> Hoạt động Public</label>
+                  <label className="flex items-center gap-1"><input type="checkbox" checked={runConfig.requireElevation} onChange={(e) => setRunConfig({...runConfig, requireElevation: e.target.checked})} className="accent-orange-500 w-4 h-4" /> Ghi nhận Elevation</label>
+                </div>
+              </div>
+            )}
+
+            {/* BOX CẤU HÌNH ĐẠP XE */}
+            {includeRide && (
+              <div className="p-6 bg-white rounded-2xl border-2 border-blue-100 shadow-sm">
+                <h4 className="text-lg font-black text-blue-600 mb-4 border-b pb-2">🚴 LUẬT ĐẠP XE (RIDE)</h4>
+                <div className="grid md:grid-cols-3 gap-4 text-sm font-medium">
+                  {selectedSportsCount > 1 && (
+                    <div><label className="text-gray-500 text-xs">Hệ số (1km = ? điểm)</label><input type="number" value={rideConfig.multiplier} onChange={(e) => setRideConfig({...rideConfig, multiplier: Number(e.target.value)})} className="w-full mt-1 bg-gray-50 border px-3 py-2 rounded-lg" /></div>
+                  )}
+                  <div><label className="text-gray-500 text-xs">Tốc độ (km/h) [Min-Max]</label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <input type="number" value={rideConfig.speedMin} onChange={(e) => setRideConfig({...rideConfig, speedMin: Number(e.target.value)})} className="w-full bg-gray-50 border px-2 py-2 rounded-lg text-center" />
+                      <span>-</span>
+                      <input type="number" value={rideConfig.speedMax} onChange={(e) => setRideConfig({...rideConfig, speedMax: Number(e.target.value)})} className="w-full bg-gray-50 border px-2 py-2 rounded-lg text-center" />
+                    </div>
+                  </div>
+                  <div><label className="text-gray-500 text-xs">Cự ly tối thiểu (km)</label><input type="number" step="0.1" value={rideConfig.minDistance} onChange={(e) => setRideConfig({...rideConfig, minDistance: Number(e.target.value)})} className="w-full mt-1 bg-gray-50 border px-3 py-2 rounded-lg" /></div>
+                </div>
+                <div className="mt-4 flex flex-wrap gap-4 text-xs font-bold text-gray-700">
+                  <label className="flex items-center gap-1"><input type="checkbox" checked={rideConfig.requireHr} onChange={(e) => setRideConfig({...rideConfig, requireHr: e.target.checked})} className="accent-blue-500 w-4 h-4" /> Bắt buộc có Nhịp tim (HR)</label>
+                  <label className="flex items-center gap-1"><input type="checkbox" checked={rideConfig.requireCadence} onChange={(e) => setRideConfig({...rideConfig, requireCadence: e.target.checked})} className="accent-blue-500 w-4 h-4" /> Bắt buộc có Guồng chân (Cadence)</label>
+                </div>
+              </div>
+            )}
+
+            {/* BOX CẤU HÌNH BƠI LỘI */}
+            {includeSwim && (
+              <div className="p-6 bg-white rounded-2xl border-2 border-cyan-100 shadow-sm">
+                <h4 className="text-lg font-black text-cyan-600 mb-4 border-b pb-2">🏊 LUẬT BƠI LỘI (SWIM)</h4>
+                
+                <div className="mb-4">
+                  <label className="text-gray-500 text-xs font-bold block mb-2">Loại hình bơi (Quyết định GPS)</label>
+                  <div className="flex gap-4">
+                    <label className="flex items-center gap-2 text-sm font-bold"><input type="radio" name="swimType" checked={swimConfig.swimType === "open"} onChange={() => setSwimConfig({...swimConfig, swimType: "open"})} className="accent-cyan-500" /> Bơi biển/Hồ (Bắt buộc GPS)</label>
+                    <label className="flex items-center gap-2 text-sm font-bold"><input type="radio" name="swimType" checked={swimConfig.swimType === "pool"} onChange={() => setSwimConfig({...swimConfig, swimType: "pool"})} className="accent-cyan-500" /> Bơi bể (Không cần GPS)</label>
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-3 gap-4 text-sm font-medium">
+                  {selectedSportsCount > 1 && (
+                    <div><label className="text-gray-500 text-xs">Hệ số (1km = ? điểm)</label><input type="number" value={swimConfig.multiplier} onChange={(e) => setSwimConfig({...swimConfig, multiplier: Number(e.target.value)})} className="w-full mt-1 bg-gray-50 border px-3 py-2 rounded-lg" /></div>
+                  )}
+                  <div><label className="text-gray-500 text-xs">Pace Bơi (phút/100m)</label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <input type="number" step="0.1" value={swimConfig.paceMin} onChange={(e) => setSwimConfig({...swimConfig, paceMin: Number(e.target.value)})} className="w-full bg-gray-50 border px-2 py-2 rounded-lg text-center" />
+                      <span>-</span>
+                      <input type="number" step="0.1" value={swimConfig.paceMax} onChange={(e) => setSwimConfig({...swimConfig, paceMax: Number(e.target.value)})} className="w-full bg-gray-50 border px-2 py-2 rounded-lg text-center" />
+                    </div>
+                  </div>
+                  <div><label className="text-gray-500 text-xs">Cự ly tối thiểu (km)</label><input type="number" step="0.1" value={swimConfig.minDistance} onChange={(e) => setSwimConfig({...swimConfig, minDistance: Number(e.target.value)})} className="w-full mt-1 bg-gray-50 border px-3 py-2 rounded-lg" /></div>
+                </div>
+                <div className="mt-4 flex flex-wrap gap-4 text-xs font-bold text-gray-700">
+                  <label className="flex items-center gap-1"><input type="checkbox" checked={swimConfig.requireHr} onChange={(e) => setSwimConfig({...swimConfig, requireHr: e.target.checked})} className="accent-cyan-500 w-4 h-4" /> Bắt buộc có Nhịp tim (HR)</label>
+                </div>
+              </div>
+            )}
+
+            {/* MẮT THẦN ANTI-CHEAT */}
+            <div className={`p-5 rounded-2xl border-2 flex items-start gap-4 transition ${enableAntiCheat ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'}`}>
+              <input type="checkbox" checked={enableAntiCheat} onChange={(e) => setEnableAntiCheat(e.target.checked)} className="w-6 h-6 mt-1 accent-red-600 cursor-pointer" />
+              <div>
+                <h4 className={`text-lg font-black ${enableAntiCheat ? 'text-red-700' : 'text-gray-500'}`}>🤖 Kích hoạt AI Anti-Cheat (Chống gian lận)</h4>
+                <p className="text-sm text-gray-600 mt-1 font-medium">Hệ thống sẽ tự động đối chiếu chéo <span className="font-bold text-gray-800">Nhịp tim - Tốc độ - Guồng chân</span>. (Ví dụ: Chạy pace 3:00 nhưng Nhịp tim 90bpm ➔ Đánh dấu vi phạm "Nghi ngờ đi xe máy"). Khi phát hiện vi phạm, log sẽ không được tính điểm và sinh ra <b>Báo cáo vi phạm chi tiết</b>.</p>
+              </div>
+            </div>
+
+            <button type="submit" className="w-full bg-gray-900 hover:bg-black text-white font-black text-lg py-5 rounded-2xl shadow-xl transition transform hover:-translate-y-1">
+              CHỐT LUẬT & TẠO GIẢI ĐẤU
             </button>
           </form>
         </div>
-
       </div>
     </div>
   );
