@@ -1,237 +1,173 @@
 "use client";
 import React, { useState } from 'react';
 
-export default function AdminSettingsPage() {
-  const [sports, setSports] = useState({ run: false, ride: false, swim: false });
-  const [swimMode, setSwimMode] = useState('pool');
-  const [isConversionEnabled, setIsConversionEnabled] = useState(false);
-  const [convMode, setConvMode] = useState('points');
+export default function AdminPage() {
+  // MOCK DATA: Danh sách các giải đấu đang chờ duyệt và đã duyệt
+  const [events, setEvents] = useState([
+    { id: 101, name: "Thử Thách Chạy Bộ Techcombank", creator: "VĐV Nguyễn Văn A", type: "Run", multiplier: 10, minKm: 2, status: "Pending" },
+    { id: 102, name: "Ironman Bán Kỳ 2026", creator: "Trần Minh Tuấn", type: "Swim", multiplier: 40, minKm: 0.5, status: "Pending" },
+    { id: 1, name: "Thử thách tháng 6 - Vượt qua giới hạn", creator: "Sếp Hiển", type: "Run", multiplier: 10, minKm: 0, status: "Approved" },
+  ]);
 
-  const toggleSport = (s: 'run' | 'ride' | 'swim') => setSports({...sports, [s]: !sports[s]});
-  const selectedCount = Object.values(sports).filter(Boolean).length;
+  // State quản lý Form Tạo Giải
+  const [newEventName, setNewEventName] = useState("");
+  const [sportType, setSportType] = useState("Run");
+  const [multiplier, setMultiplier] = useState(10);
+  const [minKm, setMinKm] = useState(0);
+  const [creatorName, setCreatorName] = useState("Người dùng ẩn danh");
 
-  // --- HÀM BẮN DỮ LIỆU ĐÃ ĐƯỢC TÍCH HỢP BIẾN MÔI TRƯỜNG ---
-  const handleCreateEvent = async () => {
-    if (selectedCount === 0) {
-      alert("⚠️ Vui lòng chọn ít nhất 1 môn thể thao!");
-      return;
-    }
+  // Hàm xử lý Duyệt giải đấu
+  const handleApprove = (id: number) => {
+    setEvents(events.map(ev => ev.id === id ? { ...ev, status: "Approved" } : ev));
+    alert(`🎉 Đã duyệt thành công giải đấu ID #${id}! Người chơi hiện tại đã có thể mời bạn bè gia nhập.`);
+  };
 
-    const payload = {
-      sports: sports,
-      swimMode: swimMode,
-      isConversionEnabled: isConversionEnabled,
-      convMode: convMode,
-      conversionRates: { run: 10, ride: 3, swim: 40 } 
+  // Hàm xử lý Từ chối giải đấu
+  const handleReject = (id: number) => {
+    setEvents(events.filter(ev => ev.id !== id));
+    alert(`🗑️ Đã gỡ bỏ yêu cầu tạo giải đấu ID #${id}.`);
+  };
+
+  // Hàm xử lý gửi Form tạo giải mới (Chuyển sang trạng thái Pending)
+  const handleCreateEvent = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newEventName) return alert("Sếp vui lòng điền tên giải đấu!");
+
+    const newEvent = {
+      id: Date.now(),
+      name: newEventName,
+      creator: creatorName,
+      type: sportType,
+      multiplier: Number(multiplier),
+      minKm: Number(minKm),
+      status: "Pending"
     };
 
-    try {
-      // Dùng biến môi trường thông minh, tự động cắt dấu "/" thừa ở cuối
-      const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-      const apiUrl = rawApiUrl.replace(/\/$/, "");
-
-      const response = await fetch(`${apiUrl}/admin/event/config`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (response.ok) {
-        alert("🎉 Chúc mừng sếp! Cấu hình đã được lưu thành công!");
-      } else {
-        alert("❌ Lỗi cấu hình, Backend từ chối nhận dữ liệu.");
-      }
-    } catch (error) {
-      console.error("Lỗi:", error);
-      alert("❌ Mất kết nối tới Backend.");
-    }
+    setEvents([newEvent, ...events]);
+    setNewEventName("");
+    alert("🚀 Gửi yêu cầu tạo giải đấu thành công! Vui lòng đợi Ban quản trị (Admin) phê duyệt để kích hoạt giải.");
   };
 
   return (
-    <div className="min-h-screen bg-[#FDFDFD] pb-20 font-sans antialiased text-[#2D3748]">
-      <div className="max-w-5xl mx-auto pt-12 px-6">
-        <div className="bg-white rounded-[2rem] shadow-xl shadow-gray-200/40 overflow-hidden border border-gray-100">
-          
-          <div className="px-10 py-8 border-b border-gray-50 bg-white">
-            <h1 className="text-3xl font-[900] text-gray-900 tracking-tight">
-              Lựa chọn môn thi đấu và cài đặt thông số
-            </h1>
-            <p className="text-gray-500 mt-2 font-[500]">Thiết lập quy tắc, chống gian lận và cơ chế tính toán cho giải đấu.</p>
-          </div>
+    <div className="min-h-screen bg-gray-50 pb-20 text-gray-800 font-sans">
+      {/* Header Bar */}
+      <nav className="bg-white shadow-sm px-6 py-4 flex justify-between items-center mb-8">
+        <h1 className="text-2xl font-extrabold tracking-tighter">
+          MY<span className="text-orange-500">RACE</span> <span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded-full uppercase ml-1">Admin Space</span>
+        </h1>
+        <div className="flex gap-4">
+          <a href="/profile?id=33415712" className="text-sm font-bold text-gray-500 hover:text-orange-500 transition">Dashboard</a>
+          <a href="/leaderboard" className="text-sm font-bold text-gray-500 hover:text-orange-500 transition">Leaderboard</a>
+        </div>
+      </nav>
 
-          <div className="p-10 space-y-12">
-            
-            <section>
-              <h2 className="text-[11px] font-[900] uppercase tracking-[0.2em] text-gray-400 mb-6">Bước 1: Chọn môn thi đấu</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <SportBtn active={sports.run} onClick={() => toggleSport('run')} icon="🏃‍♂️" label="Chạy bộ" color="#FC4C02" />
-                <SportBtn active={sports.ride} onClick={() => toggleSport('ride')} icon="🚴" label="Đạp xe" color="#0070F3" />
-                <SportBtn active={sports.swim} onClick={() => toggleSport('swim')} icon="🏊‍♂️" label="Bơi lội" color="#00B4D8" />
-              </div>
-            </section>
+      <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {/* KHU VỰC 1: BẢNG DUYỆT GIẢI CỦA TỐI CAO ADMIN (Chiếm 2 phần màn hình) */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+            <h2 className="text-2xl font-black text-gray-900 mb-6 uppercase tracking-tight flex items-center gap-2">
+              <span>⏳</span> Đơn hàng chờ duyệt ({events.filter(e => e.status === "Pending").length})
+            </h2>
 
-            {selectedCount > 0 && (
-              <section className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <h2 className="text-[11px] font-[900] uppercase tracking-[0.2em] text-gray-400">Bước 2: Cài đặt thông số</h2>
-                
-                {sports.run && (
-                  <ConfigBox title="Cấu hình Chạy bộ" color="#FC4C02" icon="🏃‍♂️">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                      <Field label="Quãng đường Min (km)" />
-                      <Field label="Pace nhanh nhất (p/km)" />
-                      <Field label="Pace chậm nhất (p/km)" />
-                    </div>
-                    <div className="mt-6 flex flex-wrap gap-4">
-                      <Toggle label="Bắt buộc GPS" />
-                      <Toggle label="Chặn nhập tay" />
-                      <Toggle label="Yêu cầu Nhịp tim" />
-                    </div>
-                  </ConfigBox>
-                )}
-
-                {sports.ride && (
-                  <ConfigBox title="Cấu hình Đạp xe" color="#0070F3" icon="🚴">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                      <Field label="Quãng đường Min (km)" />
-                      <Field label="Tốc độ tối đa (km/h)" />
-                      <Field label="Độ cao Gain Min (m)" />
-                    </div>
-                    <div className="mt-6 flex flex-wrap gap-4">
-                      <Toggle label="Bắt buộc GPS" />
-                      <Toggle label="Chặn Zwift/Virtual" />
-                      <Toggle label="Yêu cầu Nhịp tim" />
-                    </div>
-                  </ConfigBox>
-                )}
-
-                {sports.swim && (
-                  <ConfigBox title="Cấu hình Bơi lội" color="#00B4D8" icon="🏊‍♂️">
-                    <div className="mb-6 flex gap-3">
-                      <button onClick={() => setSwimMode('pool')} className={`px-6 py-3 rounded-xl font-[700] text-sm transition ${swimMode === 'pool' ? 'bg-[#00B4D8] text-white shadow-md' : 'bg-white border-2 border-gray-100 text-gray-400'}`}>Bơi bể (Pool)</button>
-                      <button onClick={() => setSwimMode('open_water')} className={`px-6 py-3 rounded-xl font-[700] text-sm transition ${swimMode === 'open_water' ? 'bg-[#00B4D8] text-white shadow-md' : 'bg-white border-2 border-gray-100 text-gray-400'}`}>Ngoài trời (Open Water)</button>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                      <Field label="Tốc độ Max - Pace nhanh nhất (p/100m)" />
-                      <Field label="Tốc độ Min - Pace chậm nhất (p/100m)" />
-                    </div>
-                    <div className="mt-6 flex flex-wrap gap-4">
-                      <Toggle label="Yêu cầu Nhịp tim" checked={true} />
-                      {swimMode === 'open_water' && <Toggle label="Bắt buộc GPS" checked={true} />}
-                    </div>
-                  </ConfigBox>
-                )}
-              </section>
-            )}
-
-            {selectedCount >= 2 && (
-              <section className="pt-8 border-t border-gray-100">
-                <div onClick={() => setIsConversionEnabled(!isConversionEnabled)} className="flex items-center justify-between p-6 bg-gray-50 rounded-2xl border border-gray-200 cursor-pointer hover:bg-gray-100 transition">
-                  <div>
-                    <h3 className="font-[700] text-gray-900">Thiết lập Quy đổi Hệ số (Tùy chọn)</h3>
-                    <p className="text-sm text-gray-500 font-[500] mt-1">Sử dụng nếu bạn muốn quy đổi điểm PTS hoặc quy chiếu chéo giữa các môn.</p>
-                  </div>
-                  <Switch checked={isConversionEnabled} />
-                </div>
-
-                {isConversionEnabled && (
-                  <div className="mt-6 bg-gray-900 rounded-[2rem] p-8 md:p-10 text-white shadow-2xl animate-in slide-in-from-top-4 fade-in duration-300">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-8">
-                      <h3 className="text-xl font-[900] text-yellow-400">Chọn phương thức:</h3>
-                      <div className="flex bg-gray-800 p-1.5 rounded-xl">
-                        <button onClick={() => setConvMode('points')} className={`px-5 py-2.5 rounded-lg text-xs font-[900] transition ${convMode === 'points' ? 'bg-white text-gray-900 shadow-md' : 'text-gray-400'}`}>KM ➔ ĐIỂM PTS</button>
-                        <button onClick={() => setConvMode('cross')} className={`px-5 py-2.5 rounded-lg text-xs font-[900] transition ${convMode === 'cross' ? 'bg-white text-gray-900 shadow-md' : 'text-gray-400'}`}>KM ➔ TƯƠNG ĐƯƠNG</button>
+            <div className="space-y-4">
+              {events.filter(e => e.status === "Pending").length === 0 ? (
+                <p className="text-gray-400 font-medium text-center py-6">Không có giải đấu nào đang chờ duyệt. Sếp có thể nghỉ ngơi! 😎</p>
+              ) : (
+                events.filter(e => e.status === "Pending").map((ev) => (
+                  <div key={ev.id} className="p-5 bg-orange-50/40 rounded-2xl border border-orange-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition hover:shadow-md">
+                    <div>
+                      <span className="inline-block bg-orange-100 text-orange-700 text-xs font-black px-2 py-0.5 rounded-md mb-2 uppercase">ID: #{ev.id}</span>
+                      <h3 className="font-extrabold text-lg text-gray-900">{ev.name}</h3>
+                      <p className="text-sm text-gray-500 font-medium mt-1">Người tạo: <span className="text-gray-700 font-bold">{ev.creator}</span></p>
+                      
+                      {/* Thống số cấu hình môn chạy */}
+                      <div className="flex gap-4 mt-3 text-xs font-bold text-gray-600">
+                        <span className="bg-white px-2 py-1 rounded-md border shadow-2xs">🎯 Môn: {ev.type === 'Run' ? '🏃 Chạy' : ev.type === 'Swim' ? '🏊 Bơi' : '🚴 Đạp'}</span>
+                        <span className="bg-white px-2 py-1 rounded-md border shadow-2xs">🔢 Hệ số: x{ev.multiplier} điểm/km</span>
+                        <span className="bg-white px-2 py-1 rounded-md border shadow-2xs">📏 Tối thiểu: {ev.minKm} km/cuốc</span>
                       </div>
                     </div>
-                    <div className="grid gap-4">
-                      {sports.run && <ConvInput sport="Chạy bộ" mode={convMode} />}
-                      {sports.ride && <ConvInput sport="Đạp xe" mode={convMode} />}
-                      {sports.swim && <ConvInput sport="Bơi lội" mode={convMode} />}
+                    
+                    {/* Cặp nút hành động của Admin */}
+                    <div className="flex gap-2 w-full md:w-auto">
+                      <button onClick={() => handleApprove(ev.id)} className="flex-1 md:flex-none bg-green-500 hover:bg-green-600 text-white font-bold px-4 py-2.5 rounded-xl text-sm shadow-sm transition">
+                        Duyệt giải
+                      </button>
+                      <button onClick={() => handleReject(ev.id)} className="flex-1 md:flex-none bg-gray-200 hover:bg-gray-300 text-gray-600 font-bold px-4 py-2.5 rounded-xl text-sm transition">
+                        Từ chối
+                      </button>
                     </div>
                   </div>
-                )}
-              </section>
-            )}
-
-            <div className="pt-4">
-              <button 
-                onClick={handleCreateEvent}
-                className="w-full bg-gray-900 text-white py-5 rounded-[1.5rem] font-[900] text-lg hover:bg-black transition-all shadow-xl shadow-gray-200"
-              >
-                HOÀN TẤT CÀI ĐẶT
-              </button>
+                ))
+              )}
             </div>
+          </div>
 
+          {/* Danh sách các giải ĐÃ DUYỆT */}
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+            <h2 className="text-xl font-bold text-gray-900 mb-4 uppercase tracking-tight">🏁 Giải đấu đang chạy hoạt động</h2>
+            <div className="divide-y divide-gray-100">
+              {events.filter(e => e.status === "Approved").map((ev) => (
+                <div key={ev.id} className="py-4 flex justify-between items-center first:pt-0 last:pb-0">
+                  <div>
+                    <h4 className="font-bold text-gray-800">{ev.name}</h4>
+                    <p className="text-xs text-gray-400 mt-0.5">Do {ev.creator} tạo • Luật: 1km = {ev.multiplier} điểm</p>
+                  </div>
+                  <span className="bg-green-100 text-green-700 font-bold px-3 py-1 rounded-full text-xs flex items-center gap-1">
+                    🟢 Đang chạy
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
 
-// ==========================================
-// CÁC COMPONENT PHỤ TRỢ (Đã bổ sung đầy đủ)
-// ==========================================
+        {/* KHU VỰC 2: FORM TẠO EVENT MỚI CỦA NGƯỜI DÙNG (Chiếm 1 phần màn hình) */}
+        <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 h-fit">
+          <h2 className="text-2xl font-black text-gray-900 mb-6 uppercase tracking-tight">➕ Tạo Giải Đấu Mới</h2>
+          
+          <form onSubmit={handleCreateEvent} className="space-y-5">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Tên giải đấu / Sự kiện</label>
+              <input type="text" value={newEventName} onChange={(e) => setNewEventName(e.target.value)} placeholder="Ví dụ: Đua Top Săn Quà..." className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-orange-500 font-medium transition" />
+            </div>
 
-function SportBtn({ active, onClick, icon, label, color }: any) {
-  return (
-    <button onClick={onClick} className={`p-6 rounded-[1.5rem] border-2 flex flex-col items-center gap-3 transition-all duration-300 ${active ? 'border-transparent shadow-xl scale-[1.02] text-white' : 'border-gray-100 bg-white text-gray-400 hover:border-gray-200 hover:bg-gray-50'}`} style={{ backgroundColor: active ? color : '' }}>
-      <span className="text-4xl">{icon}</span><span className="font-[900] text-sm uppercase tracking-widest">{label}</span>
-    </button>
-  );
-}
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Tên người tổ chức</label>
+              <input type="text" value={creatorName} onChange={(e) => setCreatorName(e.target.value)} placeholder="Tên sếp hoặc tên thương hiệu..." className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-orange-500 font-medium transition" />
+            </div>
 
-function ConfigBox({ title, color, icon, children }: any) {
-  return (
-    <div className="p-8 md:p-10 rounded-[2rem] border-2 border-gray-100 bg-[#FBFBFB] relative overflow-hidden">
-      <div className="absolute top-0 left-0 w-2 h-full" style={{ backgroundColor: color }}></div>
-      <div className="flex items-center gap-4 mb-8"><span className="text-3xl">{icon}</span><h3 className="text-xl font-[900] text-gray-800">{title}</h3></div>
-      {children}
-    </div>
-  );
-}
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Môn thể thao áp dụng</label>
+              <select value={sportType} onChange={(e) => setSportType(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-orange-500 font-bold tracking-wide transition">
+                <option value="Run">🏃 Chạy Bộ (Run)</option>
+                <option value="Ride">🚴 Đạp Xe (Ride)</option>
+                <option value="Swim">🏽 Bơi Lội (Swim)</option>
+              </select>
+            </div>
 
-function Field({ label }: { label: string }) {
-  return (
-    <div>
-      <label className="text-[10px] font-[900] text-gray-400 uppercase mb-2 block ml-1">{label}</label>
-      <input type="text" placeholder="0.0" className="w-full bg-white border border-gray-200 rounded-2xl p-4 font-[700] text-gray-800 focus:border-gray-900 outline-none transition shadow-sm" />
-    </div>
-  );
-}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Hệ số điểm (1Km = ?)</label>
+                <input type="number" value={multiplier} onChange={(e) => setMultiplier(Number(e.target.value))} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-orange-500 font-bold text-center transition" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Min Km / Cuốc</label>
+                <input type="number" step="0.1" value={minKm} onChange={(e) => setMinKm(Number(e.target.value))} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-orange-500 font-bold text-center transition" />
+              </div>
+            </div>
 
-// Hàm Toggle đã được sửa lại hoàn chỉnh không bị đứt gánh
-function Toggle({ label, checked = false }: { label: string, checked?: boolean }) {
-  const [isChecked, setIsChecked] = useState(checked);
-  return (
-    <label className="flex items-center gap-3 bg-white px-5 py-3 rounded-2xl border border-gray-200 shadow-sm cursor-pointer hover:bg-gray-50 transition">
-      <input type="checkbox" checked={isChecked} onChange={() => setIsChecked(!isChecked)} className="w-5 h-5 accent-gray-900 rounded-md cursor-pointer" />
-      <span className="font-[600] text-sm text-gray-700 select-none">{label}</span>
-    </label>
-  );
-}
+            <div className="bg-blue-50/70 rounded-2xl p-4 text-xs text-blue-700 font-medium leading-relaxed">
+              💡 <span className="font-bold">Quy tắc hệ thống:</span> Sau khi bấm gửi, giải đấu sẽ rơi vào trạng thái <span className="font-bold">Chờ duyệt</span>. Khi Admin phê duyệt giải đấu thành công, link tham gia giải mới kích hoạt cho cộng đồng join.
+            </div>
 
-// Bổ sung Component Switch bị thiếu
-function Switch({ checked }: { checked: boolean }) {
-  return (
-    <div className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors duration-300 ${checked ? 'bg-blue-600' : 'bg-gray-300'}`}>
-      <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${checked ? 'translate-x-6' : 'translate-x-0'}`}></div>
-    </div>
-  );
-}
+            <button type="submit" className="w-full bg-orange-500 hover:bg-orange-600 text-white font-black py-4 rounded-xl text-sm shadow-md transition transform hover:-translate-y-0.5">
+              GỬI YÊU CẦU DUYỆT GIẢI
+            </button>
+          </form>
+        </div>
 
-// Bổ sung Component ConvInput bị thiếu
-function ConvInput({ sport, mode }: { sport: string, mode: string }) {
-  return (
-    <div className="flex items-center justify-between bg-gray-800 p-4 rounded-xl">
-      <span className="font-[700] text-sm">{sport}</span>
-      <div className="flex items-center gap-3">
-        <span className="text-gray-400 text-xs font-[500]">1 km =</span>
-        <input 
-          type="number" 
-          defaultValue={mode === 'points' ? 10 : 1} 
-          className="w-20 bg-gray-700 text-white border-none rounded-lg p-2 text-center font-[900] focus:ring-2 focus:ring-yellow-400 outline-none" 
-        />
-        <span className="text-gray-400 text-xs font-[900]">{mode === 'points' ? 'PTS' : 'KM'}</span>
       </div>
     </div>
   );
