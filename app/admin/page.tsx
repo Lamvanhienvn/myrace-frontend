@@ -200,4 +200,4 @@ function Field({ label }: { label: string }) {
 
 function Toggle({ label, checked = false }: { label: string, checked?: boolean }) {
   return (
-    <label className="flex items-center gap-3 bg-white px-5 py-3 rounded-2xl border border-gray-200 shadow-sm cursor- ">
+    <label className="flex items-center gap-3 bg-white px-5 py-3 rounded-2xl border border-gray-200 shadow-sm cursor-pointer">
