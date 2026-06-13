@@ -200,4 +200,12 @@ function Field({ label }: { label: string }) {
 
 function Toggle({ label, checked = false }: { label: string, checked?: boolean }) {
   return (
-    <label className="flex items-center gap-3 bg-white px-5 py-3 rounded-2xl border border-gray-200 shadow-sm cursor-
+    <label className="flex items-center gap-3 bg-white px-5 py-3 rounded-2xl border border-gray-200 shadow-sm cursor-pointer">
+      <input type="checkbox" checked={checked} className="sr-only" />
+      <span className={`w-6 h-6 flex items-center justify-center rounded-full border ${checked ? 'bg-blue-500 border-blue-500' : 'border-gray-300'}`}>
+        {checked && <span className="text-white text-xs">✓</span>}
+      </span>
+      <span className="text-sm font-[500] text-gray-700">{label}</span>
+    </label>
+  );
+}
