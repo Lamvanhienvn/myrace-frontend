@@ -26,8 +26,10 @@ export default function AdminSettingsPage() {
     };
 
     try {
-      // Dùng biến môi trường ở đây để linh hoạt giữa localhost và link Internet
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      // Dùng biến môi trường thông minh, tự động cắt dấu "/" thừa ở cuối
+      const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const apiUrl = rawApiUrl.replace(/\/$/, "");
+
       const response = await fetch(`${apiUrl}/admin/event/config`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -47,11 +49,6 @@ export default function AdminSettingsPage() {
 
   return (
     <div className="min-h-screen bg-[#FDFDFD] pb-20 font-sans antialiased text-[#2D3748]">
-      <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-      `}</style>
-
       <div className="max-w-5xl mx-auto pt-12 px-6">
         <div className="bg-white rounded-[2rem] shadow-xl shadow-gray-200/40 overflow-hidden border border-gray-100">
           
@@ -171,6 +168,10 @@ export default function AdminSettingsPage() {
   );
 }
 
+// ==========================================
+// CÁC COMPONENT PHỤ TRỢ (Đã bổ sung đầy đủ)
+// ==========================================
+
 function SportBtn({ active, onClick, icon, label, color }: any) {
   return (
     <button onClick={onClick} className={`p-6 rounded-[1.5rem] border-2 flex flex-col items-center gap-3 transition-all duration-300 ${active ? 'border-transparent shadow-xl scale-[1.02] text-white' : 'border-gray-100 bg-white text-gray-400 hover:border-gray-200 hover:bg-gray-50'}`} style={{ backgroundColor: active ? color : '' }}>
@@ -198,6 +199,40 @@ function Field({ label }: { label: string }) {
   );
 }
 
+// Hàm Toggle đã được sửa lại hoàn chỉnh không bị đứt gánh
 function Toggle({ label, checked = false }: { label: string, checked?: boolean }) {
+  const [isChecked, setIsChecked] = useState(checked);
   return (
-    <label className="flex items-center gap-3 bg-white px-5 py-3 rounded-2xl border border-gray-200 shadow-sm cursor-pointer">
+    <label className="flex items-center gap-3 bg-white px-5 py-3 rounded-2xl border border-gray-200 shadow-sm cursor-pointer hover:bg-gray-50 transition">
+      <input type="checkbox" checked={isChecked} onChange={() => setIsChecked(!isChecked)} className="w-5 h-5 accent-gray-900 rounded-md cursor-pointer" />
+      <span className="font-[600] text-sm text-gray-700 select-none">{label}</span>
+    </label>
+  );
+}
+
+// Bổ sung Component Switch bị thiếu
+function Switch({ checked }: { checked: boolean }) {
+  return (
+    <div className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors duration-300 ${checked ? 'bg-blue-600' : 'bg-gray-300'}`}>
+      <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${checked ? 'translate-x-6' : 'translate-x-0'}`}></div>
+    </div>
+  );
+}
+
+// Bổ sung Component ConvInput bị thiếu
+function ConvInput({ sport, mode }: { sport: string, mode: string }) {
+  return (
+    <div className="flex items-center justify-between bg-gray-800 p-4 rounded-xl">
+      <span className="font-[700] text-sm">{sport}</span>
+      <div className="flex items-center gap-3">
+        <span className="text-gray-400 text-xs font-[500]">1 km =</span>
+        <input 
+          type="number" 
+          defaultValue={mode === 'points' ? 10 : 1} 
+          className="w-20 bg-gray-700 text-white border-none rounded-lg p-2 text-center font-[900] focus:ring-2 focus:ring-yellow-400 outline-none" 
+        />
+        <span className="text-gray-400 text-xs font-[900]">{mode === 'points' ? 'PTS' : 'KM'}</span>
+      </div>
+    </div>
+  );
+}
