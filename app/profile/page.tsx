@@ -1,13 +1,14 @@
 "use client";
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
-export default function DashboardPage() {
+// Đóng gói toàn bộ nội dung trang vào một Component con
+function ProfileContent() {
   const searchParams = useSearchParams();
   const stravaId = searchParams.get('id');
   const [isLoading, setIsLoading] = useState(true);
 
-  // MOCK DATA (Dữ liệu giả lập để sếp ngắm giao diện trước khi nối API backend)
+  // MOCK DATA (Dữ liệu giả lập)
   const user = {
     name: "Sếp Hiển",
     avatar: "https://ui-avatars.com/api/?name=Hien&background=FC4C02&color=fff&size=150",
@@ -93,7 +94,6 @@ export default function DashboardPage() {
             </div>
           ))}
 
-          {/* Nút xem thêm */}
           <button className="w-full mt-4 py-4 rounded-2xl border-2 border-gray-200 text-gray-500 font-bold hover:bg-gray-50 hover:text-gray-700 transition">
             XEM TẤT CẢ HOẠT ĐỘNG
           </button>
@@ -101,5 +101,18 @@ export default function DashboardPage() {
 
       </div>
     </div>
+  );
+}
+
+// Bọc Component con bằng Suspense ở Component chính
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
+      </div>
+    }>
+      <ProfileContent />
+    </Suspense>
   );
 }
