@@ -1,51 +1,107 @@
+"use client";
 import React from 'react';
 
-export default function LandingPage() {
-  // Lấy biến môi trường từ Vercel
-  const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-  
-  // Mẹo nhỏ cực hay: Cắt bỏ dấu "/" ở cuối link (nếu sếp lỡ tay copy dư) để tránh lỗi URL
-  const API_URL = rawApiUrl.replace(/\/$/, ""); 
-  
-  const stravaLoginUrl = `${API_URL}/auth/login`;
+// Link Backend xử lý Đăng nhập Strava
+const STRAVA_LOGIN_URL = "https://myrace-backend.onrender.com/auth/login";
 
+export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-500 to-red-600 flex flex-col items-center justify-center p-4 text-white">
-      <div className="max-w-3xl w-full text-center">
-        {/* Logo / Header */}
-        <div className="mb-8 animate-fade-in-down">
-          <h1 className="text-5xl md:text-7xl font-extrabold tracking-tighter mb-4 drop-shadow-lg">
-            MY<span className="text-yellow-300">RACE</span>
+    <div className="min-h-screen bg-gray-50 font-sans text-gray-800">
+      
+      {/* NAVBAR */}
+      <nav className="bg-white/80 backdrop-blur-md fixed top-0 w-full z-50 border-b border-gray-100 transition-all">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+          <h1 className="text-2xl font-black tracking-tighter text-gray-900">
+            MY<span className="text-orange-500">RACE</span>
           </h1>
-          <p className="text-lg md:text-2xl font-medium opacity-90 drop-shadow-md">
-            Nền Tảng Tổ Chức Giải Thể Thao Chuyên Nghiệp
-          </p>
+          <div className="flex gap-6 items-center font-bold text-sm">
+            <a href="/leaderboard" className="text-gray-500 hover:text-orange-500 transition hidden md:block">Bảng Xếp Hạng</a>
+            <a 
+              href={STRAVA_LOGIN_URL} 
+              className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-full shadow-md transition transform hover:-translate-y-0.5"
+            >
+              Kết nối Strava
+            </a>
+          </div>
+        </div>
+      </nav>
+
+      {/* HERO SECTION */}
+      <div className="relative pt-32 pb-20 md:pt-48 md:pb-32 px-4 overflow-hidden">
+        {/* Background Patterns */}
+        <div className="absolute inset-0 z-0 flex justify-center items-center opacity-10 pointer-events-none">
+           <div className="w-[800px] h-[800px] bg-orange-500 rounded-full blur-3xl"></div>
         </div>
 
-        {/* Khối Đăng nhập */}
-        <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-12 text-gray-800 max-w-md mx-auto transform transition hover:scale-105 duration-300">
-          <h2 className="text-2xl font-bold mb-2 text-center">Bắt đầu ngay</h2>
-          <p className="text-gray-500 text-center mb-8 text-sm">
-            Kết nối với đồng hồ của bạn qua hệ thống Strava
+        <div className="max-w-4xl mx-auto text-center relative z-10">
+          <span className="inline-block bg-orange-100 text-orange-700 font-black text-xs px-4 py-1.5 rounded-full mb-6 tracking-widest uppercase border border-orange-200">
+            Nền tảng thi đấu thể thao ảo
+          </span>
+          <h2 className="text-5xl md:text-7xl font-black text-gray-900 tracking-tight leading-tight mb-8">
+            Đua thực tế, <br className="hidden md:block" />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-500">
+              Vinh quang trên mây.
+            </span>
+          </h2>
+          <p className="text-lg md:text-xl text-gray-500 font-medium mb-10 max-w-2xl mx-auto leading-relaxed">
+            Hệ thống tổ chức giải đấu thể thao tự động 100%. Đồng bộ dữ liệu trực tiếp từ Strava. Tích hợp AI Trọng tài chống gian lận sinh học chuyên nghiệp.
           </p>
-
-          <a 
-            href={stravaLoginUrl}
-            className="flex items-center justify-center w-full bg-[#FC4C02] text-white py-4 px-6 rounded-xl font-bold text-lg hover:bg-[#E34402] transition-colors shadow-lg hover:shadow-orange-500/50"
-          >
-            {/* Icon Strava Trắng */}
-            <svg className="w-6 h-6 mr-3 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169" />
-            </svg>
-            Kết nối với Strava
-          </a>
-
-          <div className="mt-6 text-xs text-gray-400 text-center space-y-2">
-            <p>Hỗ trợ tự động đồng bộ Bơi - Đạp - Chạy.</p>
-            <p>Trọng tài AI chấm điểm 24/7.</p>
+          
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
+            <a 
+              href={STRAVA_LOGIN_URL} 
+              className="w-full sm:w-auto bg-gray-900 hover:bg-black text-white font-black text-lg px-10 py-5 rounded-2xl shadow-xl transition transform hover:-translate-y-1 flex items-center justify-center gap-3"
+            >
+              <img src="https://upload.wikimedia.org/wikipedia/commons/c/cb/Strava_Logo.svg" alt="Strava" className="w-6 h-6 invert" />
+              KẾT NỐI VÀ THAM GIA NGAY
+            </a>
+            <a 
+              href="/admin" 
+              className="w-full sm:w-auto bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 font-bold text-lg px-10 py-4.5 rounded-2xl shadow-sm transition flex items-center justify-center gap-2"
+            >
+              👑 Dành cho Ban tổ chức
+            </a>
           </div>
         </div>
       </div>
+
+      {/* FEATURES SECTION */}
+      <div className="bg-white py-24 border-t border-gray-100">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="text-center mb-16">
+            <h3 className="text-3xl font-black text-gray-900 uppercase tracking-tight">Tại sao chọn MyRace?</h3>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-8">
+            {/* Feature 1 */}
+            <div className="bg-gray-50 p-8 rounded-3xl border border-gray-100 hover:shadow-lg transition">
+              <div className="w-14 h-14 bg-orange-100 text-orange-600 rounded-2xl flex items-center justify-center text-3xl mb-6 shadow-sm">⚡</div>
+              <h4 className="text-xl font-black text-gray-900 mb-3">Đồng bộ tự động</h4>
+              <p className="text-gray-500 font-medium leading-relaxed">Không cần nhập kết quả bằng tay. Hoàn thành bài chạy trên Strava, điểm số tự động cập nhật lên bảng xếp hạng ngay lập tức.</p>
+            </div>
+            
+            {/* Feature 2 */}
+            <div className="bg-gray-50 p-8 rounded-3xl border border-gray-100 hover:shadow-lg transition">
+              <div className="w-14 h-14 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center text-3xl mb-6 shadow-sm">🤖</div>
+              <h4 className="text-xl font-black text-gray-900 mb-3">AI Trọng Tài Anti-Cheat</h4>
+              <p className="text-gray-500 font-medium leading-relaxed">Phân tích chéo Nhịp tim (HR), Tốc độ (Pace) và Guồng chân (Cadence) để loại bỏ hoàn toàn các hoạt động đi xe máy, gian lận.</p>
+            </div>
+
+            {/* Feature 3 */}
+            <div className="bg-gray-50 p-8 rounded-3xl border border-gray-100 hover:shadow-lg transition">
+              <div className="w-14 h-14 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center text-3xl mb-6 shadow-sm">🏆</div>
+              <h4 className="text-xl font-black text-gray-900 mb-3">Đa dạng môn thi</h4>
+              <p className="text-gray-500 font-medium leading-relaxed">Hỗ trợ thiết lập luật chơi tùy biến cho Chạy bộ, Đạp xe và Bơi lội. Quy đổi điểm thông minh để xếp hạng chung cuộc.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* FOOTER */}
+      <footer className="bg-gray-900 text-white py-12 text-center">
+        <p className="text-gray-400 font-medium">© 2026 MyRace Platform. Tích hợp Strava API.</p>
+      </footer>
+
     </div>
   );
 }

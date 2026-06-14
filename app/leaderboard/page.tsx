@@ -63,12 +63,8 @@ function LeaderboardContent() {
               athleteName = athleteName.replace(/None/g, '').trim();
 
               if (!athleteName || athleteName === "") {
-                if (Number(user.strava_id) === 33415712) {
-                  athleteName = "Sếp Hiển (Lâm Văn)";
-                } else {
-                  athleteName = `Vận Động Viên #${user.strava_id}`;
-                }
-              }
+                athleteName = `Vận Động Viên #${user.strava_id}`;
+             }
 
               return {
                 ...user,
