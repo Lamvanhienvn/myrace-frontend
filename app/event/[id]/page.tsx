@@ -7,8 +7,6 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
 
   // Lấy dữ liệu giải đấu (giả lập hoặc API thật)
   useEffect(() => {
-    // SẾP LƯU Ý: Tạm thời dùng Mock Data để sếp ngắm giao diện trước. 
-    // Khi Backend API GET /api/events/{id} sẵn sàng, chúng ta sẽ nối vào sau.
     setTimeout(() => {
       setEventData({
         id: params.id,
@@ -75,7 +73,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                 <h4 className="font-black text-orange-600 text-lg mb-3">Thông số Chạy bộ</h4>
                 <ul className="space-y-3 text-sm font-medium text-gray-600">
                   <li className="flex justify-between border-b pb-2"><span>Pace hợp lệ:</span> <strong className="text-gray-900">{eventData.rules.run.paceMin} - {eventData.rules.run.paceMax} /km</strong></li>
-                  <li className="flex justify-between border-b pb-2"><span>Tỷ lệ Moving/Elapsed:</span> <strong className="text-gray-900">>= {eventData.rules.run.movingRatio}%</strong></li>
+                  <li className="flex justify-between border-b pb-2"><span>Tỷ lệ Moving/Elapsed:</span> <strong className="text-gray-900">{">="} {eventData.rules.run.movingRatio}%</strong></li>
                   <li className="flex justify-between border-b pb-2"><span>Cự ly tối thiểu/cuốc:</span> <strong className="text-gray-900">{eventData.rules.run.minDistance} km</strong></li>
                   {eventData.rules.pointsConversion && (
                      <li className="flex justify-between bg-orange-50 px-2 py-1 rounded"><span>Điểm quy đổi:</span> <strong className="text-orange-700">1km = {eventData.rules.run.multiplier} điểm</strong></li>
@@ -90,7 +88,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                 <h4 className="font-black text-blue-600 text-lg mb-3">Thông số Đạp xe</h4>
                 <ul className="space-y-3 text-sm font-medium text-gray-600">
                   <li className="flex justify-between border-b pb-2"><span>Tốc độ hợp lệ:</span> <strong className="text-gray-900">{eventData.rules.ride.speedMin} - {eventData.rules.ride.speedMax} km/h</strong></li>
-                  <li className="flex justify-between border-b pb-2"><span>Tỷ lệ Moving/Elapsed:</span> <strong className="text-gray-900">>= {eventData.rules.ride.movingRatio}%</strong></li>
+                  <li className="flex justify-between border-b pb-2"><span>Tỷ lệ Moving/Elapsed:</span> <strong className="text-gray-900">{">="} {eventData.rules.ride.movingRatio}%</strong></li>
                   <li className="flex justify-between border-b pb-2"><span>Bắt buộc đo nhịp tim (HR):</span> <strong className="text-gray-900">{eventData.rules.ride.requireHr ? "Có" : "Không"}</strong></li>
                   {eventData.rules.pointsConversion && (
                      <li className="flex justify-between bg-blue-50 px-2 py-1 rounded"><span>Điểm quy đổi:</span> <strong className="text-blue-700">1km = {eventData.rules.ride.multiplier} điểm</strong></li>
