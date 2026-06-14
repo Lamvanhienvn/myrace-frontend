@@ -16,7 +16,6 @@ function LeaderboardContent() {
   const [searchTerm, setSearchTerm] = useState("");
   const [rawDebugData, setRawDebugData] = useState<string>("Đang kết nối ống nước...");
 
-  // BƯỚC 1: Lấy danh sách giải đấu
   useEffect(() => {
     const fetchEvents = async () => {
       try {
@@ -36,7 +35,6 @@ function LeaderboardContent() {
     fetchEvents();
   }, [selectedEventId]);
 
-  // BƯỚC 2: Hút điểm & Cập nhật màn hình
   useEffect(() => {
     if (!selectedEventId) return;
 
@@ -49,30 +47,26 @@ function LeaderboardContent() {
         
         if (res.ok) {
           const data = await res.json();
-          setRawDebugData(JSON.stringify(data, null, 2)); // In màn hình đen
+          setRawDebugData(JSON.stringify(data, null, 2));
           
-          // 🎯 LOGIC MỚI: BÓC HỘP THÔNG MINH
           let actualArray = [];
           if (Array.isArray(data)) {
-            actualArray = data; // Nếu Backend gửi List thuần
+            actualArray = data;
           } else if (data && Array.isArray(data.leaderboard)) {
-            actualArray = data.leaderboard; // Nếu Backend bọc trong Object
+            actualArray = data.leaderboard;
           }
 
           if (actualArray.length > 0) {
             const cleanedData = actualArray.map((user: any) => ({
               ...user,
-              // Xử lý mất tên: Lấy Name, nếu không có thì lấy Strava ID bù vào
               name: (user.name || `Strava VĐV ${user.strava_id}`).replace(/None/g, '').trim(),
-              // Xử lý sai biến: Lấy score thay cho points
               points: user.score !== undefined ? user.score : (user.points || 0),
-              // Xử lý ảnh ảo
               avatar: user.avatar || `https://ui-avatars.com/api/?name=V&background=FC4C02&color=fff&size=128`
             }));
             
-            // Xếp hạng lại từ cao xuống thấp cho chắc ăn
-            cleanedData.sort((a, b) => b.points - a.points);
-            cleanedData.forEach((u, idx) => u.rank = idx + 1);
+            // 🎯 ĐÃ SỬA LỖI TYPESCRIPT Ở ĐÂY: Ép kiểu (a: any, b: any)
+            cleanedData.sort((a: any, b: any) => b.points - a.points);
+            cleanedData.forEach((u: any, idx: number) => u.rank = idx + 1);
 
             setLeaderboardData(cleanedData);
           } else {
@@ -113,7 +107,6 @@ function LeaderboardContent() {
           <h2 className="text-4xl font-black text-gray-900 tracking-tight uppercase">BẢNG XẾP HẠNG</h2>
         </div>
 
-        {/* BỘ LỌC CHỌN GIẢI ĐẤU */}
         <div className="flex justify-center mb-8 relative z-30">
           <select 
             value={selectedEventId || ""} 
@@ -130,7 +123,6 @@ function LeaderboardContent() {
           </select>
         </div>
 
-        {/* THANH TÌM KIẾM */}
         <div className="mb-6 max-w-xl mx-auto relative z-20">
           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
             <span className="text-xl">🔍</span>
@@ -144,7 +136,6 @@ function LeaderboardContent() {
           />
         </div>
 
-        {/* BẢNG RADA DEBUG - THU GỌN */}
         <details className="bg-gray-900 text-green-400 p-2 rounded-xl font-mono text-xs overflow-auto mb-8 shadow-inner border-2 border-green-900 opacity-60 hover:opacity-100 cursor-pointer">
            <summary className="text-white font-bold outline-none select-none">💻 Máy Nội Soi API (Bấm để xem)</summary>
            <pre className="mt-2">{rawDebugData}</pre>
@@ -158,7 +149,6 @@ function LeaderboardContent() {
           </div>
         ) : (
           <>
-            {/* BỤC VINH QUANG */}
             {!isSearching && (
               <div className="flex justify-center items-end gap-2 md:gap-6 mb-12 h-64 z-10 relative">
                 {top2 && (
@@ -197,7 +187,6 @@ function LeaderboardContent() {
               </div>
             )}
 
-            {/* DANH SÁCH TỪ TOP 4 TRỞ XUỐNG */}
             <div className="bg-white rounded-3xl p-2 md:p-6 shadow-sm border border-gray-100">
               {filteredData.length === 0 && isSearching ? (
                 <p className="text-center text-gray-500 font-bold py-8">Không tìm thấy VĐV nào tên "{searchTerm}"</p>
