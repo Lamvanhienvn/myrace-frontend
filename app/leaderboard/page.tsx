@@ -8,52 +8,50 @@ function LeaderboardContent() {
   const searchParams = useSearchParams();
   const initialEventId = searchParams.get('event_id'); 
   
-  // Quản lý Danh sách giải đấu và Giải đang chọn
   const [events, setEvents] = useState<any[]>([]);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(initialEventId);
-  
-  // Quản lý dữ liệu Leaderboard
   const [leaderboardData, setLeaderboardData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // THANH TÌM KIẾM
   const [searchTerm, setSearchTerm] = useState("");
 
-  // BƯỚC 1: Lấy danh sách tất cả các giải đấu để tạo Menu chọn
+  // Lấy danh sách giải đấu
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        // Thêm ?t=... để đập tan bộ nhớ đệm Cache của trình duyệt
-        const res = await fetch(`${API_URL}/api/events?t=${new Date().getTime()}`, { cache: 'no-store' });
+        const res = await fetch(`${API_URL}/api/events?t=${Date.now()}`, { cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
           const approvedEvents = data.filter((e: any) => e.status === "approved");
           setEvents(approvedEvents);
-          
-          // Nếu URL không có event_id, tự động chọn giải đấu mới nhất
           if (!selectedEventId && approvedEvents.length > 0) {
             setSelectedEventId(String(approvedEvents[0].id));
           }
         }
       } catch (error) {
-        console.error("Lỗi tải danh sách giải:", error);
+        console.error("Lỗi lấy danh sách giải:", error);
       }
     };
     fetchEvents();
   }, [selectedEventId]);
 
-  // BƯỚC 2: Gọi API lấy Bảng xếp hạng khi ID Giải đấu thay đổi
+  // Lấy Bảng xếp hạng khi chọn Giải
   useEffect(() => {
     if (!selectedEventId) return;
 
     const fetchLeaderboard = async () => {
       setIsLoading(true);
       try {
-        // Ép buộc tải dữ liệu thật (Real-time)
-        const res = await fetch(`${API_URL}/api/leaderboard/${selectedEventId}?t=${new Date().getTime()}`, { cache: 'no-store' });
+        const res = await fetch(`${API_URL}/api/leaderboard/${selectedEventId}?t=${Date.now()}`, { cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
+          console.log("👉 DỮ LIỆU TỪ BACKEND TRẢ VỀ:", data); // Báo cáo ngầm để sếp kiểm tra F12
+          
           if (Array.isArray(data)) {
             const cleanedData = data.map(user => ({
               ...user,
+              // FIX LỖI TÊN NONE NONE
               name: user.name.replace(/None/g, '').trim() || "VĐV Ẩn Danh"
             }));
             setLeaderboardData(cleanedData);
@@ -73,13 +71,15 @@ function LeaderboardContent() {
   }
 
   const safeData = Array.isArray(leaderboardData) ? leaderboardData : [];
+  
+  // TÌM KIẾM: Lọc tên VĐV
   const filteredData = safeData.filter(user => user.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  const isSearching = searchTerm.trim().length > 0;
 
   const top1 = safeData.length > 0 ? safeData[0] : null;
   const top2 = safeData.length > 1 ? safeData[1] : null;
   const top3 = safeData.length > 2 ? safeData[2] : null;
   const others = safeData.length > 3 ? safeData.slice(3) : [];
-  const isSearching = searchTerm.trim().length > 0;
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20 text-gray-800 font-sans">
@@ -95,21 +95,24 @@ function LeaderboardContent() {
           <h2 className="text-4xl font-black text-gray-900 tracking-tight uppercase">BẢNG XẾP HẠNG</h2>
         </div>
 
-        {/* BỘ LỌC CHỌN GIẢI ĐẤU (MENU THẢ XUỐNG) */}
-        <div className="flex justify-center mb-10 relative z-30">
+        {/* BỘ LỌC CHỌN GIẢI ĐẤU */}
+        <div className="flex justify-center mb-8 relative z-30">
           <select 
             value={selectedEventId || ""} 
-            onChange={(e) => setSelectedEventId(e.target.value)}
-            className="w-full md:w-auto bg-white border-2 border-orange-200 text-gray-800 font-bold py-3 px-6 rounded-xl focus:outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-50 shadow-sm appearance-none cursor-pointer text-center"
+            onChange={(e) => {
+               setSelectedEventId(e.target.value);
+               setSearchTerm(""); // Reset tìm kiếm khi đổi giải
+            }}
+            className="w-full md:w-auto bg-white border-2 border-orange-200 text-gray-800 font-bold py-3 px-6 rounded-xl focus:outline-none focus:border-orange-500 shadow-sm appearance-none cursor-pointer text-center"
           >
-            {events.length === 0 && <option value="">Đang tải danh sách giải đấu...</option>}
+            {events.length === 0 && <option value="">Đang tải danh sách giải...</option>}
             {events.map(ev => (
-              <option key={ev.id} value={ev.id}>🏆 {ev.name} (ID: #{ev.id})</option>
+              <option key={ev.id} value={ev.id}>🏆 {ev.name}</option>
             ))}
           </select>
         </div>
 
-        {/* THANH TÌM KIẾM TÊN VĐV */}
+        {/* THANH TÌM KIẾM (Chỉ hiện khi có người) */}
         {safeData.length > 0 && (
           <div className="mb-10 max-w-xl mx-auto relative z-20">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -117,7 +120,7 @@ function LeaderboardContent() {
             </div>
             <input
               type="text"
-              placeholder="Tìm kiếm tên tay đua..."
+              placeholder="Tìm kiếm tên VĐV..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full bg-white border-2 border-gray-200 rounded-2xl pl-12 pr-4 py-4 font-bold text-gray-700 focus:outline-none focus:border-orange-500 transition shadow-sm"
@@ -129,11 +132,11 @@ function LeaderboardContent() {
            <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-10 w-10 border-t-2 border-orange-500"></div></div>
         ) : safeData.length === 0 ? (
           <div className="text-center bg-white p-10 rounded-3xl shadow-sm border border-gray-100">
-            <h3 className="text-xl font-bold text-gray-500">Giải đấu này chưa có ai ghi điểm. Sếp hãy là người dẫn đầu! 🚀</h3>
+            <h3 className="text-xl font-bold text-gray-500">Chưa có VĐV nào ghi điểm trong giải này! 🚀</h3>
           </div>
         ) : (
           <>
-            {/* ẨN BỤC VINH QUANG NẾU ĐANG TÌM KIẾM */}
+            {/* ẨN BỤC VINH QUANG KHI CÓ GÕ TÌM KIẾM */}
             {!isSearching && (
               <div className="flex justify-center items-end gap-2 md:gap-6 mb-12 h-64 z-10 relative">
                 {top2 && (
@@ -172,6 +175,7 @@ function LeaderboardContent() {
               </div>
             )}
 
+            {/* DANH SÁCH (Hiển thị list search hoặc từ top 4) */}
             <div className="bg-white rounded-3xl p-2 md:p-6 shadow-sm border border-gray-100">
               {filteredData.length === 0 && isSearching ? (
                 <p className="text-center text-gray-500 font-bold py-8">Không tìm thấy VĐV nào tên "{searchTerm}"</p>
