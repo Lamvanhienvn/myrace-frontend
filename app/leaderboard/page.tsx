@@ -13,10 +13,11 @@ function LeaderboardContent() {
   const [leaderboardData, setLeaderboardData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
-  // THANH TÌM KIẾM
+  // Trạng thái tìm kiếm & Nội soi dữ liệu
   const [searchTerm, setSearchTerm] = useState("");
+  const [rawDebugData, setRawDebugData] = useState<string>("Đang kết nối ống nước...");
 
-  // Lấy danh sách giải đấu
+  // BƯỚC 1: Lấy danh sách giải đấu
   useEffect(() => {
     const fetchEvents = async () => {
       try {
@@ -36,29 +37,37 @@ function LeaderboardContent() {
     fetchEvents();
   }, [selectedEventId]);
 
-  // Lấy Bảng xếp hạng khi chọn Giải
+  // BƯỚC 2: Hút điểm & Cập nhật màn hình Nội soi
   useEffect(() => {
     if (!selectedEventId) return;
 
     const fetchLeaderboard = async () => {
       setIsLoading(true);
+      setRawDebugData("Đang kéo dữ liệu từ Render...");
       try {
-        const res = await fetch(`${API_URL}/api/leaderboard/${selectedEventId}?t=${Date.now()}`, { cache: 'no-store' });
+        const url = `${API_URL}/api/leaderboard/${selectedEventId}?t=${Date.now()}`;
+        const res = await fetch(url, { cache: 'no-store' });
+        
         if (res.ok) {
           const data = await res.json();
-          console.log("👉 DỮ LIỆU TỪ BACKEND TRẢ VỀ:", data); // Báo cáo ngầm để sếp kiểm tra F12
+          
+          // MÁY NỘI SOI: In thẳng cái data này ra màn hình đen
+          setRawDebugData(JSON.stringify(data, null, 2));
           
           if (Array.isArray(data)) {
             const cleanedData = data.map(user => ({
               ...user,
-              // FIX LỖI TÊN NONE NONE
-              name: user.name.replace(/None/g, '').trim() || "VĐV Ẩn Danh"
+              name: (user.name || "").replace(/None/g, '').trim() || "VĐV Ẩn Danh"
             }));
             setLeaderboardData(cleanedData);
+          } else {
+             setRawDebugData("Lỗi: Dữ liệu Render không phải dạng Array! Raw: " + JSON.stringify(data));
           }
+        } else {
+          setRawDebugData(`Render báo lỗi API: Mã ${res.status}`);
         }
-      } catch (error) {
-        console.error("Lỗi lấy dữ liệu Bảng xếp hạng:", error);
+      } catch (error: any) {
+        setRawDebugData(`Mất kết nối: ${error.message}`);
       } finally {
         setIsLoading(false);
       }
@@ -66,14 +75,8 @@ function LeaderboardContent() {
     fetchLeaderboard();
   }, [selectedEventId]);
 
-  if (isLoading && !selectedEventId) {
-    return <div className="min-h-screen flex items-center justify-center bg-gray-50"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-orange-500"></div></div>;
-  }
-
   const safeData = Array.isArray(leaderboardData) ? leaderboardData : [];
-  
-  // TÌM KIẾM: Lọc tên VĐV
-  const filteredData = safeData.filter(user => user.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredData = safeData.filter(user => (user.name || "").toLowerCase().includes(searchTerm.toLowerCase()));
   const isSearching = searchTerm.trim().length > 0;
 
   const top1 = safeData.length > 0 ? safeData[0] : null;
@@ -101,42 +104,47 @@ function LeaderboardContent() {
             value={selectedEventId || ""} 
             onChange={(e) => {
                setSelectedEventId(e.target.value);
-               setSearchTerm(""); // Reset tìm kiếm khi đổi giải
+               setSearchTerm("");
             }}
             className="w-full md:w-auto bg-white border-2 border-orange-200 text-gray-800 font-bold py-3 px-6 rounded-xl focus:outline-none focus:border-orange-500 shadow-sm appearance-none cursor-pointer text-center"
           >
             {events.length === 0 && <option value="">Đang tải danh sách giải...</option>}
             {events.map(ev => (
-              <option key={ev.id} value={ev.id}>🏆 {ev.name}</option>
+              <option key={ev.id} value={ev.id}>🏆 {ev.name} (ID Giải: #{ev.id})</option>
             ))}
           </select>
         </div>
 
-        {/* THANH TÌM KIẾM (Chỉ hiện khi có người) */}
-        {safeData.length > 0 && (
-          <div className="mb-10 max-w-xl mx-auto relative z-20">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              <span className="text-xl">🔍</span>
-            </div>
-            <input
-              type="text"
-              placeholder="Tìm kiếm tên VĐV..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-white border-2 border-gray-200 rounded-2xl pl-12 pr-4 py-4 font-bold text-gray-700 focus:outline-none focus:border-orange-500 transition shadow-sm"
-            />
+        {/* THANH TÌM KIẾM (LUÔN HIỂN THỊ DÙ KHÔNG CÓ AI) */}
+        <div className="mb-6 max-w-xl mx-auto relative z-20">
+          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+            <span className="text-xl">🔍</span>
           </div>
-        )}
+          <input
+            type="text"
+            placeholder="Tìm kiếm tên VĐV (Code V5.0 đã cập nhật)..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-white border-2 border-orange-300 rounded-2xl pl-12 pr-4 py-4 font-bold text-gray-700 focus:outline-none focus:border-orange-600 transition shadow-md"
+          />
+        </div>
+
+        {/* BẢNG RADA DEBUG - NỘI SOI DỮ LIỆU */}
+        <div className="bg-gray-900 text-green-400 p-4 rounded-xl font-mono text-xs overflow-auto mb-8 shadow-inner border-2 border-green-900">
+           <p className="text-white font-bold mb-2">💻 MÁY NỘI SOI DỮ LIỆU TỪ RENDER:</p>
+           <pre>{rawDebugData}</pre>
+        </div>
 
         {isLoading ? (
            <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-10 w-10 border-t-2 border-orange-500"></div></div>
         ) : safeData.length === 0 ? (
           <div className="text-center bg-white p-10 rounded-3xl shadow-sm border border-gray-100">
-            <h3 className="text-xl font-bold text-gray-500">Chưa có VĐV nào ghi điểm trong giải này! 🚀</h3>
+            <h3 className="text-xl font-bold text-gray-500">Giải đấu này chưa có ai ghi điểm! 🚀</h3>
+            <p className="text-sm mt-2 text-red-500 font-medium">Sếp xem bảng màu đen bên trên, nếu nó ghi là "[]" thì nghĩa là dưới Database Render sếp không nằm trong giải đấu này!</p>
           </div>
         ) : (
           <>
-            {/* ẨN BỤC VINH QUANG KHI CÓ GÕ TÌM KIẾM */}
+            {/* BỤC VINH QUANG */}
             {!isSearching && (
               <div className="flex justify-center items-end gap-2 md:gap-6 mb-12 h-64 z-10 relative">
                 {top2 && (
